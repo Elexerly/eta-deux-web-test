@@ -1,0 +1,16 @@
+{
+  "name": "Escape the Avalanche Deux",
+  "short_name": "Avalanche Deux",
+  "description": "Escape the Avalanche Deux - web playtest",
+  "start_url": "./",
+  "scope": "./",
+  "display": "standalone",
+  "orientation": "portrait",
+  "background_color": "#0b1630",
+  "theme_color": "#12203a",
+  "icons": [
+    { "src": "icons/icon-192.png", "sizes": "192x192", "type": "image/png" },
+    { "src": "icons/icon-512.png", "sizes": "512x512", "type": "image/png" },
+    { "src": "icons/apple-touch-icon-180.png", "sizes": "180x180", "type": "image/png" }
+  ]
+}
