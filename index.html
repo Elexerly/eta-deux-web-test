@@ -99,7 +99,7 @@ body {
 <meta http-equiv="Cache-Control" content="no-cache, no-store, must-revalidate">
 <meta http-equiv="Pragma" content="no-cache">
 <meta http-equiv="Expires" content="0">
-<link rel="manifest" href="manifest.webmanifest?v=20261028-1547">
+<link rel="manifest" href="manifest.webmanifest?v=20261028-2238">
 <style>html,body{overscroll-behavior:none;-webkit-user-select:none;user-select:none;-webkit-touch-callout:none;-webkit-tap-highlight-color:transparent;position:fixed;inset:0;width:100%;height:100%;height:100dvh;margin:0;padding:0;overflow:hidden;background:#0b1630;-webkit-text-size-adjust:100%;text-size-adjust:100%}
 /* v4: the canvas always fills the visible viewport (Godot sizes it from innerWidth/innerHeight; head JS re-triggers the resize after iOS
    rotation / toolbar changes).  The game draws extra scenery (not black bars) when the screen is taller than the 720x1280 play area. */
@@ -128,7 +128,7 @@ body {
 //    The page owns source selection, filter and manual calibration; GDScript applies dead zone and sensitivity.
 //  * window.__eadAudio : Web Audio unlock + a level meter tapped off the engine's own output + an independent pure-JS beep.
 //  * DBG overlay (HTML, bottom of the screen, visible by default in this build): everything Patrick can screenshot.
-window.__EAD_BUILD = '20261028-1547';
+window.__EAD_BUILD = '20261028-2238';
 /* v8 stale-cache guard: index.html is served no-cache, but an old Home-Screen / bfcache copy can still be running. Compare with the
    server's BUILD_ID.txt and reload ONCE (sessionStorage guard, cache-busting query) if they differ. Never loops. */
 (function(){try{
@@ -140,7 +140,7 @@ window.__EAD_BUILD = '20261028-1547';
     var u=new URL(location.href); u.searchParams.set('b',t); location.replace(u.toString());
   }).catch(function(){});
 }catch(e){}})();
-window.__EAD_VERSION = 'v10b';
+window.__EAD_VERSION = 'v11a';
 window.__eadWantTilt = true;
 window.__eadState = {};
 window.__eadSetDebug = function (on) { window.__eadPendingDebug = !!on; };   // replaced by the debug module once the DOM is ready
@@ -1409,8 +1409,8 @@ window.__eadFrame = { ms: 0, worst: 0, n: 0 };
 })();
 </script>
 
-		<link id="-gd-engine-icon" rel="icon" type="image/png" href="ead-20261028-1547.icon.png" />
-<link rel="apple-touch-icon" href="icons/apple-touch-icon-180.png?v=20261028-1547"/>
+		<link id="-gd-engine-icon" rel="icon" type="image/png" href="ead-20261028-2238.icon.png" />
+<link rel="apple-touch-icon" href="icons/apple-touch-icon-180.png?v=20261028-2238"/>
 
 	</head>
 	<body>
@@ -1423,14 +1423,14 @@ window.__eadFrame = { ms: 0, worst: 0, n: 0 };
 		</noscript>
 
 		<div id="status">
-			<img id="status-splash" class="show-image--true fullsize--true use-filter--true" src="ead-20261028-1547.png" alt="">
+			<img id="status-splash" class="show-image--true fullsize--true use-filter--true" src="ead-20261028-2238.png" alt="">
 			<progress id="status-progress"></progress>
 			<div id="status-notice"></div>
 		</div>
 
-		<script src="ead-20261028-1547.js"></script>
+		<script src="ead-20261028-2238.js"></script>
 		<script>
-const GODOT_CONFIG = {"args":[],"canvasResizePolicy":2,"emscriptenPoolSize":8,"ensureCrossOriginIsolationHeaders":false,"executable":"ead-20261028-1547","experimentalVK":false,"fileSizes":{"ead-20261028-1547.pck":29655744,"ead-20261028-1547.wasm":39514754},"focusCanvas":true,"gdextensionLibs":[],"godotPoolSize":4};
+const GODOT_CONFIG = {"args":[],"canvasResizePolicy":2,"emscriptenPoolSize":8,"ensureCrossOriginIsolationHeaders":false,"executable":"ead-20261028-2238","experimentalVK":false,"fileSizes":{"ead-20261028-2238.pck":29640712,"ead-20261028-2238.wasm":39514754},"focusCanvas":true,"gdextensionLibs":[],"godotPoolSize":4};
 const GODOT_THREADS_ENABLED = false;
 const engine = new Engine(GODOT_CONFIG);
 
