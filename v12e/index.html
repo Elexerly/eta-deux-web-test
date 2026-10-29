@@ -1,0 +1,1540 @@
+<!DOCTYPE html>
+<html lang="en">
+	<head>
+		<meta charset="utf-8">
+		<meta name="viewport" content="width=device-width, initial-scale=1, minimum-scale=1, maximum-scale=1, user-scalable=no, viewport-fit=cover">
+		<title>Escape the Avalanche Deux</title>
+		<style>
+html, body, #canvas {
+	margin: 0;
+	padding: 0;
+	border: 0;
+}
+
+body {
+	color: white;
+	background-color: black;
+	overflow: hidden;
+	touch-action: none;
+}
+
+#canvas {
+	display: block;
+}
+
+#canvas:focus {
+	outline: none;
+}
+
+#status, #status-splash, #status-progress {
+	position: absolute;
+	left: 0;
+	right: 0;
+}
+
+#status, #status-splash {
+	top: 0;
+	bottom: 0;
+}
+
+#status {
+	background-color: #242424;
+	display: flex;
+	flex-direction: column;
+	justify-content: center;
+	align-items: center;
+	visibility: hidden;
+}
+
+#status-splash {
+	max-height: 100%;
+	max-width: 100%;
+	margin: auto;
+}
+
+#status-splash.show-image--false {
+	display: none;
+}
+
+#status-splash.fullsize--true {
+	height: 100%;
+	width: 100%;
+	object-fit: contain;
+}
+
+#status-splash.use-filter--false {
+	image-rendering: auto;
+}
+
+#status-progress, #status-notice {
+	display: none;
+}
+
+#status-progress {
+	bottom: 10%;
+	width: 50%;
+	margin: 0 auto;
+}
+
+#status-notice {
+	background-color: #5b3943;
+	border-radius: 0.5rem;
+	border: 1px solid #9b3943;
+	color: #e0e0e0;
+	font-family: 'Noto Sans', 'Droid Sans', Arial, sans-serif;
+	line-height: 1.3;
+	margin: 0 2rem;
+	overflow: hidden;
+	padding: 1rem;
+	text-align: center;
+	z-index: 1;
+}
+		</style>
+		<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+<meta name="apple-mobile-web-app-title" content="Avalanche Deux">
+<meta name="theme-color" content="#12203a">
+<meta name="format-detection" content="telephone=no">
+<meta http-equiv="Cache-Control" content="no-cache, no-store, must-revalidate">
+<meta http-equiv="Pragma" content="no-cache">
+<meta http-equiv="Expires" content="0">
+<link rel="manifest" href="manifest.webmanifest?v=v12e-20261029">
+<style>html,body{overscroll-behavior:none;-webkit-user-select:none;user-select:none;-webkit-touch-callout:none;-webkit-tap-highlight-color:transparent;position:fixed;inset:0;width:100%;height:100%;height:100dvh;margin:0;padding:0;overflow:hidden;background:#0b1630;-webkit-text-size-adjust:100%;text-size-adjust:100%}
+/* v4: the canvas always fills the visible viewport (Godot sizes it from innerWidth/innerHeight; head JS re-triggers the resize after iOS
+   rotation / toolbar changes).  The game draws extra scenery (not black bars) when the screen is taller than the 720x1280 play area. */
+#canvas{position:fixed;left:0;top:0;touch-action:none;transition:none !important}
+#eadprobe{position:fixed;left:0;top:0;right:0;bottom:0;visibility:hidden;pointer-events:none;z-index:-1}
+#eadsafe{position:fixed;left:0;top:0;width:1px;height:env(safe-area-inset-top,0px);visibility:hidden;pointer-events:none}
+#eadsafeb{position:fixed;left:0;bottom:0;width:1px;height:env(safe-area-inset-bottom,0px);visibility:hidden;pointer-events:none}
+#eadsafel{position:fixed;left:0;top:0;height:1px;width:env(safe-area-inset-left,0px);visibility:hidden;pointer-events:none}
+#eadsafer{position:fixed;right:0;top:0;height:1px;width:env(safe-area-inset-right,0px);visibility:hidden;pointer-events:none}
+#eaddbg{position:fixed;left:0;right:0;bottom:0;max-height:40vh;z-index:9998;font:9px/1.22 ui-monospace,Menlo,monospace;color:#d8ffd0;background:rgba(2,10,24,.80);padding:3px 5px calc(3px + env(safe-area-inset-bottom));white-space:pre-wrap;word-break:break-all;overflow:hidden;pointer-events:none}
+#eaddbg.off{display:none}
+#eadbtns{position:fixed;left:0;right:0;bottom:0;z-index:9999;display:flex;gap:4px;padding:0 4px calc(2px + env(safe-area-inset-bottom));pointer-events:none}
+#eadbtns button,#eaddbgbtn,#eadhint button{pointer-events:auto;font:600 10px/1 -apple-system,Helvetica,Arial,sans-serif;color:#fff;background:#1d4fa8;border:1px solid #9cc4ff;border-radius:6px;padding:7px 8px;-webkit-appearance:none;appearance:none}
+#eaddbgbtn{position:fixed;left:4px;top:calc(4px + env(safe-area-inset-top));z-index:9999;background:rgba(20,60,130,.85)}
+#eadhint{position:fixed;left:6px;right:6px;bottom:calc(10px + env(safe-area-inset-bottom));z-index:9997;display:none;font:11px/1.3 -apple-system,Helvetica,Arial,sans-serif;color:#fff;background:rgba(10,30,70,.88);border:1px solid #9cc4ff;border-radius:10px;padding:7px 9px;pointer-events:auto}
+#eadbar{position:fixed;left:6px;right:6px;bottom:90px;height:22px;z-index:9998;background:rgba(2,10,24,.85);border:1px solid #9cc4ff;border-radius:4px;pointer-events:none;display:none;overflow:hidden}
+#eadbar i{position:absolute;top:0;bottom:0;left:50%;width:0}
+#eadbar b{position:absolute;top:0;bottom:0;left:50%;width:2px;margin-left:-1px;background:#fff}
+#eadbar span{position:absolute;left:0;right:0;top:4px;text-align:center;font:10px/14px ui-monospace,Menlo,monospace;color:#fff;text-shadow:0 0 3px #000}
+#eadtoast{position:fixed;left:10%;right:10%;top:40%;z-index:10000;display:none;text-align:center;font:700 18px/1.3 -apple-system,Helvetica,Arial,sans-serif;color:#fff;background:rgba(20,90,200,.92);border:2px solid #fff;border-radius:14px;padding:14px;pointer-events:none}
+#eadhint button{float:right;margin-left:8px;padding:4px 7px}
+</style>
+<script>
+// Web helpers (input / audio / diagnostics plumbing only; no gameplay logic).  v4
+//  * window.__eadTilt  : RAW device sensor values (accelerationIncludingGravity x/y/z, deviceorientation beta/gamma/alpha, screen angle).
+//    The page owns source selection, filter and manual calibration; GDScript applies dead zone and sensitivity.
+//  * window.__eadAudio : Web Audio unlock + a level meter tapped off the engine's own output + an independent pure-JS beep.
+//  * DBG overlay (HTML, bottom of the screen, visible by default in this build): everything Patrick can screenshot.
+window.__EAD_BUILD = 'v12e-20261029';
+/* v8 stale-cache guard: index.html is served no-cache, but an old Home-Screen / bfcache copy can still be running. Compare with the
+   server's BUILD_ID.txt and reload ONCE (sessionStorage guard, cache-busting query) if they differ. Never loops. */
+(function(){try{
+  if(location.protocol==='file:'||!window.fetch)return;
+  fetch('BUILD_ID.txt?t='+Date.now(),{cache:'no-store'}).then(function(r){return r.ok?r.text():''}).then(function(t){
+    t=(t||'').trim(); window.__EAD_SERVER_BUILD=t;
+    if(!t||t===window.__EAD_BUILD||!/^[0-9-]+$/.test(t))return;
+    var k='ead_reload_'+t; if(sessionStorage.getItem(k))return; sessionStorage.setItem(k,'1');
+    var u=new URL(location.href); u.searchParams.set('b',t); location.replace(u.toString());
+  }).catch(function(){});
+}catch(e){}})();
+window.__EAD_VERSION = 'v12b';
+window.__eadWantTilt = true;
+window.__eadState = {};
+window.__eadAdminEnabled = 'true' !== 'false';
+window.__eadSetDebug = function (on) { window.__eadPendingDebug = window.__eadAdminEnabled && !!on; };   // replaced by the debug module once the DOM is ready
+window.__eadCmdBox = { v: '' };
+window.__eadVis = { hidden: document.hidden === true, n: 0, lastMs: 0, since: 0 };
+// v9f lifecycle log (DBG panel): every page event that can interrupt a run, coalesced (same type within 3 s => count).
+window.__eadLife = { log: [] };
+(function () {
+  const L = window.__eadLife, V = window.__eadVis;
+  function now() { return (window.performance && performance.now) ? performance.now() : Date.now(); }
+  L.add = function (type, detail) {
+    const t = now(), last = L.log[L.log.length - 1], text = type + (detail ? ' ' + detail : '');
+    if (last && last[1] === text && t - last[0] < 3000) { last[0] = t; last[2]++; return; }
+    L.log.push([t, text, 1]); if (L.log.length > 12) L.log.shift();
+  };
+  if (V.hidden) V.since = now();
+  // v9f: Godot's frame loop (rAF) stops while hidden, so it may never observe hidden===true. The page reports each completed
+  // hidden period (n, lastMs); main.gd pauses for a real background (>= 1 s) and only logs a shorter blip.
+  document.addEventListener('visibilitychange', function () {
+    const h = document.hidden === true;
+    if (h && !V.hidden) V.since = now();
+    if (!h && V.hidden) { V.lastMs = Math.round(now() - V.since); V.n++; }
+    V.hidden = h; L.add('visibility', h ? 'hidden' : 'visible' + (V.lastMs ? ' (hidden ' + V.lastMs + ' ms)' : ''));
+  }, true);
+  ['blur', 'focus', 'pagehide', 'pageshow', 'resize', 'orientationchange'].forEach(function (ev) {
+    window.addEventListener(ev, function (e) { L.add(ev, (ev === 'pagehide' || ev === 'pageshow') ? 'persisted ' + !!e.persisted : ''); }, true);
+  });
+  ['freeze', 'resume', 'fullscreenchange', 'webkitfullscreenchange'].forEach(function (ev) { document.addEventListener(ev, function () { L.add(ev); }, true); });
+})();
+window.__eadErr = { last: '-', count: 0 };
+window.__eadTilt = { ok: false, x: 0, y: 0, z: 0, gamma: 0, beta: 0, alpha: 0, hasAccel: false, hasOrient: false, tAccel: 0, tOrient: 0,
+  nMotion: 0, nOrient: 0, angle: 0, state: 'unasked', events: 0, lockTried: false, lockResult: '-',
+  ios: /iP(hone|ad|od)/.test(navigator.userAgent) || (navigator.platform === 'MacIntel' && navigator.maxTouchPoints > 1) };
+(function () { const ua = navigator.userAgent, T = window.__eadTilt;      // v10b: browser family for diagnostics and the Samsung-only steering guards
+  T.samsung = /SamsungBrowser/i.test(ua); T.android = /Android/i.test(ua) && !T.ios;
+  T.uaFamily = T.samsung ? 'samsung' : /Firefox|FxiOS/i.test(ua) ? 'firefox' : /EdgA?\//.test(ua) ? 'edge' : /CriOS|Chrome\//.test(ua) ? 'chrome' : /Safari/.test(ua) ? 'safari' : 'other'; })();
+window.__eadAudio = { ctxState: 'none', ctxCount: 0, ctxStates: [], session: 'n/a', htmlAudio: 'off', unlocked: false, gestures: 0, resumeCalls: 0,
+  track: '-', playing: false, sfx: '-', peak: 0, rms: 0, levelSeen: false, jsState: 'none', beeps: 0, beepResult: '-', htmlResult: '-', mode: '?',
+  lastGesture: '-', primeResult: '-', ctxSample: 0, muted: false, autoSwitch: '-' };
+try { window.__eadAudio.noMeter = window.__eadTilt.android && !/[?&](debug|meter)=1/.test(location.search) && localStorage.getItem('ead_debug') !== '1'; } catch (e) {}
+
+// ---- last error (shown in the DBG panel)
+(function () {
+  const E = window.__eadErr;
+  function rec(m) { E.last = String(m).slice(0, 140); E.count++; }
+  window.addEventListener('error', function (e) { rec((e.message || 'error') + ' @' + String(e.filename || '').split('/').pop() + ':' + (e.lineno || 0)); });
+  window.addEventListener('unhandledrejection', function (e) { rec('promise: ' + (e.reason && (e.reason.message || e.reason))); });
+  const ce = console.error;
+  console.error = function () { try { rec(Array.prototype.slice.call(arguments).join(' ')); } catch (x) {} return ce.apply(console, arguments); };
+})();
+
+// BEGIN PURE FOLD
+(function(root) {
+  const foldModel=/SM-F9\d\d|Samsung.*Fold|\bFold\b/i;
+  function decision(o, previous=false) {
+    const dimensions='viewport '+o.width+'x'+o.height+' screen '+(o.screenWidth||0)+'x'+(o.screenHeight||0)+', ';
+    if(o.override==='phone' || o.override==='fold') return {fold:o.override==='fold',why:dimensions+'forced '+o.override.toUpperCase()};
+    if(!o.touch) return {fold:false,why:dimensions+'no touch -> PHONE'};
+    const short=Math.min(o.width,o.height); // screen dimensions are diagnostic only: fold browsers can report the cover screen.
+    let why='';
+    if(o.segments>1) why='two viewport segments';
+    else if(short>=480) why='viewport short side '+short+'>=480';
+    else if(short>=450 && foldModel.test(o.ua||'')) why='Fold model, viewport short side '+short+'>=450';
+    else if(previous && short>=450) why='hysteresis, viewport short side '+short+'>=450';
+    return {fold:!!why,why:dimensions+'touch, '+(why?why+' -> FOLD':'short side '+short+'<480 -> PHONE')};
+  }
+  function detect(o, previous=false) { return decision(o,previous).fold; }
+  root.__eadFold={detect,decision};
+})(typeof window==='undefined'?globalThis:window);
+// END PURE FOLD
+// BEGIN PURE FOLD RELOAD
+(function(root) {
+  function create(storage, now, reload) {
+    let accepted, memory={times:[],total:0};
+    const key='ead_layout_reloads_v9j';
+    function read() { try { const v=JSON.parse(storage.getItem(key)); if(v && Array.isArray(v.times)) memory=v; } catch(e) {} return memory; }
+    function accept(fold) {
+      if(accepted===undefined) { accepted=fold; return false; }
+      if(fold===accepted) return false;
+      accepted=fold;
+      const stamp=now(), record=read();
+      record.times=record.times.filter(t=>Number.isFinite(t) && stamp-t>=0 && stamp-t<60000);
+      if(record.times.length>=3 || record.times.some(t=>stamp-t<5000)) return false;
+      record.times.push(stamp); record.total=(record.total||0)+1;
+      try { storage.setItem(key,JSON.stringify(record)); } catch(e) {}
+      root.__eadReloads=record.total;
+      reload();
+      return true;
+    }
+    root.__eadReloads=read().total||0;
+    return {accept,key};
+  }
+  root.__eadReloadGuard={create};
+})(typeof window==='undefined'?globalThis:window);
+// END PURE FOLD RELOAD
+window.__eadFoldReload=window.__eadReloadGuard.create(
+  {getItem:k=>sessionStorage.getItem(k),setItem:(k,v)=>sessionStorage.setItem(k,v)},
+  ()=>Date.now(),()=>{ if(window.__eadBeforeClassReload) window.__eadBeforeClassReload(); setTimeout(()=>{if(typeof location.reload==='function') location.reload();},0); });
+
+window.__eadDevice={override:'auto',fold:false,source:'auto'};
+try {
+  localStorage.removeItem('ead_device_mode'); // v9 overrides predate explicit, versioned Options choices.
+  const m=new URLSearchParams(location.search).get('mode'), saved=localStorage.getItem('ead_device_mode_v2');
+  const url=['phone','fold','auto'].includes(m);
+  window.__eadDevice.override=url?m:(['auto','phone','fold'].includes(saved)?saved:'auto');
+  window.__eadDevice.source=url?'url':'saved';
+} catch(e) {}
+try { if(navigator.userAgentData && navigator.userAgentData.getHighEntropyValues)
+  navigator.userAgentData.getHighEntropyValues(['model']).then(v=>{window.__eadDevice.model=v.model||'';window.__eadMeasure&&window.__eadMeasure();}).catch(()=>{});
+} catch(e) {}
+window.__eadSetDeviceMode=function(mode) {
+  if(!['auto','phone','fold'].includes(mode)) return;
+  window.__eadDevice.override=mode; window.__eadDevice.source='saved';
+  try { localStorage.setItem('ead_device_mode_v2',mode); } catch(e) {}
+  if(window.__eadTilt) window.__eadTilt.lockTried=false;
+  if(window.__eadMeasure) window.__eadMeasure();
+};
+
+// BEGIN PURE FIELD WIDTH
+function __eadPickFieldW(w,h,fold) {
+  if (!fold) return 720;
+  const desired=Math.max(720,Math.min(1920,w*.94/Math.max(h/1280,.001)));
+  return Math.max(720,Math.min(1920,Math.round(desired/80)*80));
+}
+// END PURE FIELD WIDTH
+// BEGIN PURE STABLE LAYOUT
+(function(root) {
+  // v10a: the picture is FIXED TO THE DEVICE BODY. A closed phone always shows the portrait board with its top at the device's natural top;
+  // an open fold always shows the wide board with the same device edge up. When the OS rotates the page (auto-rotate: landscape or upside
+  // down) the canvas is counter-rotated with CSS so the picture looks identical. Only the OS screen angle and the viewport SHAPE take part:
+  // sensor values never do. Fold <-> phone class changes keep the 500 ms persistence rule (they reload the page elsewhere).
+  const norm=a=>((Math.round(Number.isFinite(a)?a:0)%360)+360)%360;
+  // css rotation (degrees: 0, 90, -90, 180) for a class, viewport shape and screen angle; ref = the fold's upright angle (phone: 0)
+  function layoutDeg(fold, landscape, angle, ref, touch) {
+    if(touch===false) return 0;                              // a desktop window never rotates
+    const a=norm(angle), m=norm(a-(fold?ref:0));
+    let deg=m===0?0:m===90?-90:m===180?180:90;
+    const swap=fold?!landscape:landscape;                    // the viewport is turned against the class's fixed picture
+    if(swap && Math.abs(deg)!==90) deg=fold?90:(a===270?90:-90);
+    if(!swap && Math.abs(deg)===90) deg=0;
+    return deg;
+  }
+  function create() {
+    let accepted=null, pending='', since=0, ref=null, refGuess=false, degPending=null, degSince=0;
+    const DEG_MS=400;      // v10b: an angle-only change (same viewport shape: 0<->180, -90<->+90) must persist before it moves the picture
+    function updateRef(o, landscape) {
+      if(!o.fold) return;
+      const a=norm(o.angle);
+      if(landscape) { if(ref===null || refGuess) { ref=a; refGuess=false; } }
+      else if(ref===null) { ref=norm(a+90); refGuess=true; }
+    }
+    function consistent(o, landscape) {
+      const m=norm(o.angle-(o.fold?(ref===null?0:ref):0));
+      return o.fold ? landscape===(m%180===0) : landscape===(m%180===90);
+    }
+    return function(o, now) {
+      const landscape=accepted && Math.abs(o.width/o.height-1)<0.05 ? accepted.landscape : o.width>o.height;
+      const key=o.fold+':'+landscape;
+      let take=!accepted || o.force || key===accepted.key;
+      if(!take && o.fold===accepted.fold && consistent(o, landscape) ) take=true;   // shape change that agrees with the OS angle
+      if(take) {
+        updateRef(o, landscape);
+        let deg=layoutDeg(o.fold,landscape,o.angle,ref,o.touch);
+        if(accepted && key===accepted.key && !o.force && deg!==accepted.deg) {
+          if(degPending!==deg) { degPending=deg; degSince=now; }
+          if(now-degSince>=DEG_MS) degPending=null; else deg=accepted.deg;
+        } else degPending=null;
+        accepted={key,fold:o.fold,landscape,deg};
+        pending='';
+      } else {
+        if(pending!==key) { pending=key; since=now; }
+        if(now-since>=500) { updateRef(o, landscape); accepted={key,fold:o.fold,landscape,deg:layoutDeg(o.fold,landscape,o.angle,ref,o.touch)}; pending=''; }
+        else return {...accepted};
+      }
+      accepted.width=o.width; accepted.height=o.height;
+      return {...accepted};
+    };
+  }
+  root.__eadStableLayout={create,layoutDeg};
+})(typeof window==='undefined'?globalThis:window);
+// END PURE STABLE LAYOUT
+
+// BEGIN PURE CLASSIC TILT (also extracted by Node tests)
+(function(root) {
+  const clamp = v => Math.max(-1, Math.min(1, v));
+  const channels = ['gamma','beta','ax','ay'];
+  const RAD = Math.PI/180;
+  // v9c: unit gravity (DOWN) vector in natural-device axes, from the fused orientation if present, else from accelerationIncludingGravity
+  // (iOS reports the down direction, Android/Chrome the up reaction). W3C ZXY: down = (cos b sin g, -sin b, -cos b cos g).
+  function down(s, ios=true) {
+    if (Number.isFinite(s.beta) && Number.isFinite(s.gamma)) {
+      const b=s.beta*RAD, g=s.gamma*RAD; return [Math.cos(b)*Math.sin(g), -Math.sin(b), -Math.cos(b)*Math.cos(g)];
+    }
+    if ([s.ax,s.ay,s.az].every(Number.isFinite)) {
+      const n=Math.hypot(s.ax,s.ay,s.az); if (n<0.1) return null;
+      const k=(ios?1:-1)/n; return [s.ax*k, s.ay*k, s.az*k];
+    }
+    return null;
+  }
+  // v9c: lean of the SCREEN (+ = right edge of the picture down) from a gravity vector, rotated into the screen frame by the screen angle.
+  // Upright it is the steering-wheel angle atan2(x,|y|), reclined the tray lean atan2(x,|z|), blended by |y| and |z| (TiltInput.gravity_roll_deg).
+  // It is 0 at rest for every pitch, odd in the lean, and has no Euler wrap (gamma/beta jump by 180 near an upright landscape hold).
+  function screenRoll(g, angle=0) {
+    const n=Math.hypot(g[0],g[1],g[2]); if (!(n>0.1)) return null;
+    const t=angle*RAD, ux=g[0]/n, uy=g[1]/n, uz=g[2]/n;
+    const x=ux*Math.cos(t)-uy*Math.sin(t), y=ux*Math.sin(t)+uy*Math.cos(t), wy=Math.abs(y), wz=Math.abs(uz);
+    if (wy+wz<1e-4) return 90*Math.sign(x);
+    return (wy*Math.atan2(x,wy+1e-6)+wz*Math.atan2(x,wz+1e-6))/(wy+wz)/RAD;
+  }
+  function value(s, channel, ios=true) {
+    if (channel === 'grav') { const g=down(s, ios); return g ? screenRoll(g, s.angle||0) : null; }
+    if (channel === 'gamma' && Number.isFinite(s.gamma) && Number.isFinite(s.beta)) {
+      // v10b: gamma is the roll only while the phone is not near/over vertical. Past beta +-90 it is MIRRORED (steering reversed); near it, it
+      // saturates (tan r = sin g / tan b). Samsung Internet: near vertical (|beta| >= 70) blend into the wrap-free gravity roll, 100% from 80.
+      const ab = Math.abs(s.beta);
+      if (s.samsung && ab >= 70) {
+        const g = down(s, ios), r = g ? screenRoll(g, 0) : null;
+        if (r !== null) { const w = Math.min(1, (ab - 70) / 10); return s.gamma * (ab > 90 ? -1 : 1) * (1 - w) + r * w; }
+      }
+      if (ab > 90) return -s.gamma;
+    }
+    const v = s[channel];
+    return Number.isFinite(v) ? v * (channel[0] === 'a' ? (ios ? 1 : -1) * 45 / (9.81 * Math.SQRT1_2) : 1) : null;
+  }
+  function map(v, base=0, sign=1) { return clamp((v-base)*sign/45); }
+  function smooth(previous, target, alpha=0.5) { return previous + (target-previous)*alpha; }
+  function stats(samples, channel) {
+    const a=[];
+    let filtered;
+    for (const s of samples) {
+      let v=value(s, channel, s.ios !== false);
+      if (channel[0] === 'a') {
+        if (![s.ax,s.ay,s.az].every(Number.isFinite) || Math.abs(Math.hypot(s.ax,s.ay,s.az)-9.81)>2) continue;
+        filtered=filtered === undefined ? v : smooth(filtered,v,0.5); v=filtered;
+      }
+      if (Number.isFinite(v)) a.push(v);
+    }
+    if (a.length < 3) return null;
+    const base=a[0], min=Math.min(...a), max=Math.max(...a), lo=min-base, hi=max-base;
+    const detected=lo < -6 && hi > 6;
+    return {channel,base,swing:hi-lo,detected,sign:detected && a.lastIndexOf(min)>a.lastIndexOf(max)?-1:1};
+  }
+  function detect(samples, hasOrient=samples.some(s => Number.isFinite(s.gamma) || Number.isFinite(s.beta)), foldLandscape=false) {
+    // v9c fold landscape: only the screen-frame gravity lean is meaningful (gamma there measures the pitch and is even in the lean).
+    if (foldLandscape) return stats(samples,'grav') || {channel:'grav',base:0,swing:0,detected:false,sign:1};
+    const all = {};
+    for (const channel of channels) {
+      if (hasOrient && channel[0] === 'a') continue;
+      const st=stats(samples, channel); if (st) all[channel]=st;
+    }
+    const gamma=all.gamma || {channel:'gamma',base:0,swing:0,detected:false,sign:1};
+    if (gamma.swing >= 8) return gamma;
+    const other=Object.values(all).filter(a=>a.channel!=='gamma' && a.detected && a.swing>=20 && a.swing>=2*gamma.swing).sort((a,b)=>b.swing-a.swing)[0];
+    return other || gamma;
+  }
+  // v9c: fold landscape steers by the screen-frame gravity lean; the screen angle is applied inside screenRoll, so the sign is +1 at every angle.
+  function landscapeDefault(angle) { return {channel:'grav',sign:1}; }
+  function axisKey(fold, landscape, angle) {
+    return fold && landscape ? 'ead_v9c_fold_tilt' : 'ead_classic_axis';
+  }
+  // v9c: a stored base is stale when the player is clearly holding still near level but the base puts that pose > 35 deg off:
+  // the output would sit saturated at one side ("only far left"). Window: >= 1.5 s of samples within 8 deg.
+  function staleBase(values, base) {
+    if (values.length < 20 || !Number.isFinite(base) || base === 0) return false;
+    const sorted=[...values].sort((a,b)=>a-b), med=sorted[sorted.length>>1];
+    return sorted[sorted.length-1]-sorted[0] <= 8 && Math.abs(med) < 20 && Math.abs(med-base) > 35;
+  }
+  // v9c: which screen angle gravity itself implies. When the screen is >= 30 deg from flat the in-plane gravity points to the bottom edge
+  // of the picture (that is how the OS chooses the rotation). Returns the nearest quadrant and the deviation from the reported angle.
+  function gravityAngle(g, reported) {
+    const mag=Math.hypot(g[0],g[1]);
+    // screen down for angle t is (-sin t, -cos t) in device axes
+    const t=Math.atan2(-g[0],-g[1])/RAD, q=((Math.round(t/90)*90)%360+360)%360;
+    let dev=Math.abs(((t-reported)%360+540)%360-180);
+    return {mag, angle:q, deviation:dev};
+  }
+  // v9j: a deviceorientation reading that must never be applied nor feed detection. Always: null/NaN. Strict (closed small Chrome screen,
+  // or before the first valid sample): exactly 0/0 (the fused sensor's identity attitude before it converged), a repeated event
+  // (same timeStamp), or the pre-pause reading replayed right after a resume (`stale` = [beta, gamma, alpha] or null).
+  function invalidOrient(e, strict, prevStamp, stale) {
+    if (!Number.isFinite(e.beta) || !Number.isFinite(e.gamma)) return true;
+    if (!strict) return false;
+    if (e.beta === 0 && e.gamma === 0) return true;
+    if (prevStamp !== undefined && e.timeStamp === prevStamp) return true;
+    return !!stale && e.beta === stale[0] && e.gamma === stale[1] && (Number.isFinite(e.alpha) ? e.alpha : 0) === stale[2];
+  }
+  // v9j: closed small screen class (Surface Duo cover/single screen in Chrome): viewport short side 340-420, long side 600-760 CSS px,
+  // touch, Chrome on Android, not iOS, not FOLD.
+  function closedSmall(o) {
+    if (o.ios || o.fold || !o.touch || !/Android/.test(o.ua || '') || !/Chrome\//.test(o.ua || '')) return false;
+    const a=Math.min(o.width,o.height), b=Math.max(o.width,o.height);
+    return a >= 340 && a <= 420 && b >= 600 && b <= 760;
+  }
+  // v9j: the unprompted first-run window only knows the ORDER of the last left/right extremes: it never reverses or re-bases the channel in use.
+  function autoKeeps(a, automatic, channel) { return !!(a && a.detected && automatic && a.channel === channel); }
+  root.__eadTiltAxis = {value,map,smooth,detect,landscapeDefault,axisKey,down,screenRoll,staleBase,gravityAngle,invalidOrient,closedSmall,autoKeeps};
+})(typeof window === 'undefined' ? globalThis : window);
+// END PURE CLASSIC TILT
+
+// ---- Rendering resolution. An explicit ?dpr=N tier caps the backing store (rendering resolution only). v9f: FOLD caps it by default
+//      to a pixel budget: dpr <= min(2, sqrt(1.6 MP / css area)), never below 1. At 871x545 CSS (Duo, real dpr 3) the canvas is
+//      1599x1000 (1.60 MP) instead of 2613x1635 (4.27 MP); CSS scaling keeps the layout. Phone keeps native dpr. ?dpr=3 restores native.
+(function () {
+  try {
+    const own = Object.getOwnPropertyDescriptor(window, 'devicePixelRatio') || Object.getOwnPropertyDescriptor(Window.prototype, 'devicePixelRatio');
+    const realGet = function () { const v = own && own.get ? own.get.call(window) : (own ? own.value : 1); return v > 0 ? v : 1; };
+    const m = /[?&]dpr=([0-9.]+)/.exec(location.search);
+    const D = window.__eadDpr = { real: realGet(), url: m ? parseFloat(m[1]) : 0, budget: 1.6e6, used: 0, why: 'native', low: false };
+    try { if (/[?&]quality=high/.test(location.search)) localStorage.removeItem('ead_quality'); D.low = /[?&]quality=low/.test(location.search) || localStorage.getItem('ead_quality') === 'low'; } catch (e) {}
+    Object.defineProperty(window, 'devicePixelRatio', { configurable: true, get: function () {
+      const real = realGet(); let v = real, why = 'native';
+      if (D.url > 0) { if (real > D.url) { v = D.url; why = 'url'; } }
+      else {
+        const vp = window.__eadVP;
+        if (vp && vp.fold && vp.w > 0 && vp.h > 0) {
+          const cap = Math.max(1, Math.min(2, Math.sqrt(D.budget / (vp.w * vp.h))));
+          if (real > cap) { v = cap; why = 'fold budget'; }
+        } else if (D.low) { if (real > 1.5) { v = 1.5; why = 'quality low'; } }                      // v10b: the automatic quality fallback (Godot sets ead_quality=low)
+        else if (window.__eadTilt && window.__eadTilt.android) { if (real > 2) { v = 2; why = 'android cap 2'; } }   // v10b: 1080p Android phones render ~2.5 MP at native dpr
+      }
+      D.real = real; D.used = v; D.why = why; return v;
+    } });
+  } catch (e) {}
+})();
+
+// ---- v10b frame pacing monitor (diagnostics only: one tiny rAF; the quality fallback itself lives in Godot, which sets ead_quality=low)
+window.__eadFrame = { ms: 0, worst: 0, n: 0 };
+(function () { let last = 0, acc = 0, cnt = 0, worst = 0; const F = window.__eadFrame;
+  function tick(t) { if (last) { const d = t - last; if (d < 1000) { acc += d; cnt++; if (d > worst) worst = d; } if (cnt >= 60) { F.ms = acc / cnt; F.worst = worst; F.n++; acc = 0; cnt = 0; worst = 0; } } last = t; requestAnimationFrame(tick); }
+  requestAnimationFrame(tick); })();
+
+// ---- capture every AudioContext the engine creates (GodotAudio is NOT a global) and tap what reaches ctx.destination for a level meter
+(function () {
+  const A = window.__eadAudio;
+  window.__eadCtxs = [];
+  window.__eadOrigAC = window.AudioContext || window.webkitAudioContext;     // untouched constructor (used for our own beep context)
+  ['AudioContext', 'webkitAudioContext'].forEach(function (name) {
+    const Orig = window[name];
+    if (!Orig || Orig.__ead) return;
+    const Wrapped = function () {
+      let args = Array.prototype.slice.call(arguments);
+      // v10b: on Android a larger output buffer is far more robust against main-thread load (sensor + render) than Godot's 15 ms hint
+      try { if (window.__eadTilt.android && !/[?&]latency=default/.test(location.search)) { const o = Object.assign({}, args[0] || {}); o.latencyHint = 'playback'; args = [o]; window.__eadAudio.hint = 'playback'; } } catch (e) {}
+      const ctx = new (Function.prototype.bind.apply(Orig, [null].concat(args)))();
+      window.__eadCtxs.push(ctx); A.ctxCount = window.__eadCtxs.length; A.ctxState = ctx.state; A.ctxSample = ctx.sampleRate;
+      ctx.addEventListener('statechange', function () { A.ctxState = ctx.state; if (window.__eadLife) window.__eadLife.add('audioctx', ctx.state); });
+      return ctx;
+    };
+    Wrapped.prototype = Orig.prototype; Wrapped.__ead = true;
+    try { window[name] = Wrapped; } catch (e) {}
+  });
+  // level meter: everything the engine connects to the destination also feeds a (silent) analyser branch
+  try {
+    const origConnect = AudioNode.prototype.connect;
+    function tapFor(ctx) {
+      if (ctx.__eadTap) return ctx.__eadTap;
+      const input = ctx.createGain(), an = ctx.createAnalyser(), sink = ctx.createGain();
+      an.fftSize = 1024; sink.gain.value = 0;
+      [input, an, sink].forEach(function (n) { n.__eadIsTap = true; });
+      origConnect.call(input, an); origConnect.call(an, sink); origConnect.call(sink, ctx.destination);   // sink (gain 0) keeps the branch pulled in every engine
+      ctx.__eadTap = { input: input, an: an, buf: new Float32Array(an.fftSize) };
+      return ctx.__eadTap;
+    }
+    AudioNode.prototype.connect = function (dest) {
+      const r = origConnect.apply(this, arguments);
+      try {
+        if (window.__eadAudio.noMeter) return r;      // v10b: the analyser branch is pulled every audio quantum; low-end Android skips it unless debug/meter is on
+        if (!this.__eadIsTap && !this.__eadTapped && dest && typeof AudioDestinationNode !== 'undefined' && dest instanceof AudioDestinationNode) {
+          this.__eadTapped = true; origConnect.call(this, tapFor(this.context).input);
+        }
+      } catch (e) {}
+      return r;
+    };
+    let hist = [];
+    setInterval(function () {
+      let pk = 0, sum = 0, n = 0;
+      window.__eadCtxs.forEach(function (c) {
+        const t = c.__eadTap; if (!t || c.state !== 'running') return;
+        try { t.an.getFloatTimeDomainData(t.buf); } catch (e) { return; }
+        for (let i = 0; i < t.buf.length; i++) { const v = Math.abs(t.buf[i]); if (v > pk) pk = v; sum += v * v; n++; }
+      });
+      A.rms = n ? Math.sqrt(sum / n) : 0;
+      const now = Date.now(); hist.push([now, pk]); hist = hist.filter(function (h) { return now - h[0] < 2500; });
+      A.peak = hist.reduce(function (m, h) { return Math.max(m, h[1]); }, 0);
+      if (A.peak > 0.0005) A.levelSeen = true;
+    }, 60);
+  } catch (e) { A.tapError = String(e); }
+})();
+
+(function () {
+  const T = window.__eadTilt, A = window.__eadAudio;
+  function screenAngle() {
+    let a;
+    try { a=screen.orientation && screen.orientation.angle; } catch(e) {}
+    if(!Number.isFinite(a)) a=window.orientation;
+    if(!Number.isFinite(a)) a=window.__eadVP && window.__eadVP.lw>window.__eadVP.lh?90:0;
+    return (a%360+360)%360;
+  }
+  window.__eadScreenAngle=screenAngle;
+  // v10a: the PICTURE's angle relative to the device body = OS screen angle + the css counter-rotation. It equals the angle the picture was
+  // validated at (0 = phone, the fold's upright angle), so a rotated device steers exactly like an unrotated one. deg 0 => plain screenAngle().
+  function tiltAngle() { const vp=window.__eadVP, d=vp && Number.isFinite(vp.deg) ? vp.deg : 0; return ((screenAngle()+d)%360+360)%360; }
+  window.__eadTiltAngle=tiltAngle;
+  function stamp() { return (window.performance && performance.now) ? performance.now() : Date.now(); }
+  function f(v, d) { return (typeof v === 'number' && isFinite(v)) ? v.toFixed(d === undefined ? 1 : d) : (v === undefined || v === null ? '-' : String(v)); }
+  // Absolute level like the original iPhone game. Only CALIBRATE may change the base.
+  T.sign = 1; T.base = 0; T.roll = 0; T.rollRaw = 0; T.rel = 0; T.out = 0;
+  T.src = '-'; T.srcLocked = '-'; T.inited = false; T.listening = false;
+  T.calNote = 'absolute level'; T.calCount = 0; T.gx = 0; T.pose = 0;
+  T.tListen = 0; T.lastAccepted = 0; T.timedOut = false;
+  // v9c: tilt records written by v8/v9/v9b are cleared ONCE. Fold landscape records encoded gamma (the pitch, not the lean) and could
+  // pin the skier to one side; phone records may have been captured while v8/v9 CSS-rotated this fold. Afterwards keys keep their v8 meaning.
+  T.migrated = [];
+  try {
+    if (localStorage.getItem('ead_tilt_schema') !== 'v9c') {
+      ['ead_classic_axis','ead_classic_axis_90','ead_classic_axis_270','ead_classic_axis_fold0','ead_classic_axis_fold180','ead_tilt_base'].forEach(function(k){
+        if (localStorage.getItem(k) !== null) { T.migrated.push(k); localStorage.removeItem(k); }
+      });
+      localStorage.setItem('ead_tilt_schema','v9c');
+    }
+  } catch (e) {}
+  try { const b = Number(localStorage.getItem('ead_tilt_base')); if (Number.isFinite(b)) T.base = b; } catch (e) {}
+  T.classic = true; T.cChannel = 'gamma'; T.cSign=1; T.cBase=0; T.axisLocked = false;
+  // Compatibility alias for older diagnostics; classic state never touches fused sign/base.
+  Object.defineProperty(T,'channel',{get:()=>T.cChannel,set:v=>{T.cChannel=v;}});
+  const CHANNELS=['gamma','beta','ax','ay','grav'];
+  try { const a=JSON.parse(localStorage.getItem('ead_classic_axis')); if(a && ['gamma','beta','ax','ay'].includes(a.channel) && [1,-1].includes(a.sign) && Number.isFinite(a.base)) { T.cChannel=a.channel; T.cSign=a.sign; T.cBase=a.base; T.axisLocked=true; } } catch(e) {}
+  function saveClassic() { try { localStorage.setItem(axisKey(),JSON.stringify({channel:T.cChannel,sign:T.cSign,base:T.cBase})); } catch(e) {} }
+  function axisKey() { return T.axisKey || 'ead_classic_axis'; }
+  T.axisAngle=0; T.axisKey='ead_classic_axis'; T.axisSource=T.axisLocked?'stored':'default';
+  function syncAxis(sample, sensorEvent) {
+    const fold=window.__eadDevice.fold, angle=fold?tiltAngle():0;
+    const vp=window.__eadVP, landscape=!!(vp && (vp.lw>vp.lh)!==(Math.abs(vp.deg||0)===90));
+    const key=window.__eadTiltAxis.axisKey(fold,landscape,angle);
+    const pose=fold+':'+landscape+':'+angle;
+    if(pose===T.axisPose) return;
+    const changed=T.axisPose!==undefined;
+    T.axisPose=pose;
+    if(fold && changed) T.rotationUntil=stamp()+300;
+    T.frameAngle=undefined; T.frameSince=0; restVals.length=0;
+    if(key===axisKey() && angle===T.axisAngle) return;
+    T.axisAngle=angle; T.axisKey=key;
+    const d=fold && landscape ? window.__eadTiltAxis.landscapeDefault(angle) : {channel:'gamma',sign:1};
+    T.cChannel=d.channel; T.cSign=d.sign; T.cBase=0;
+    T.axisLocked=false; T.axisSource='default';
+    try { const a=JSON.parse(localStorage.getItem(axisKey()));
+      if(a && (fold && landscape ? ['grav'] : ['gamma','beta','ax','ay']).includes(a.channel) && [1,-1].includes(a.sign) && Number.isFinite(a.base)) {
+        T.cChannel=a.channel; T.cSign=a.sign; T.axisLocked=true; T.axisSource='stored';
+        T.cBase=a.base;
+      }
+    } catch(e) {}
+    T.out=0; classicTime=0; detection=null; autoDetectStarted=false;
+  }
+  let classicTime=0, detection=null, autoDetectStarted=false;
+  const restVals=[];           // v9c: [time, raw value] of the last 1.5 s (stale-base check)
+  T.autoResets=0; T.frameNote=''; T.gravSrc='-';
+  function foldLandscape() { const vp=window.__eadVP; return !!(window.__eadDevice.fold && vp && vp.lw>vp.lh); }
+  window.__eadSetClassic = function(on) { T.classicWanted=!!on; T.classic=window.__eadDevice.fold || T.classicWanted; T.inited=false; T.srcLocked='-'; T.ok=false; T.out=0; classicTime=0; };
+  window.__eadFoldNotice=function(){toast('FOLD mode uses CLASSIC TILT');};
+  window.__eadResetTilt = function() {
+    try { ['ead_classic_axis','ead_classic_axis_90','ead_classic_axis_270','ead_classic_axis_fold0','ead_classic_axis_fold180','ead_v9c_fold_tilt'].forEach(k=>localStorage.removeItem(k)); localStorage.removeItem('ead_tilt_base'); } catch(e) {}
+    const d=foldLandscape() ? window.__eadTiltAxis.landscapeDefault(T.axisAngle) : {channel:'gamma',sign:1};
+    T.cChannel=d.channel; T.cSign=d.sign; T.cBase=0; T.frameAngle=undefined; restVals.length=0; T.axisSource='default'; T.base=0; T.sign=1; T.axisLocked=false; T.out=0; classicTime=0; detection=null;
+    toast('TILT RESET');
+  };
+  window.__eadDetectAxis = function(automatic=false) {
+    if(!T.classic) return;
+    detection={start:automatic?null:stamp(),samples:[],automatic};
+    if(!automatic) toast('TILT LEFT, THEN RIGHT — 2');
+  };
+  function classicSample(now, sensorEvent=false, src='') {
+    const sample={gamma:T.hasOrient?T.gamma:null,beta:T.hasOrient?T.beta:null,ax:T.hasAccel?T.x:null,ay:T.hasAccel?T.y:null,az:T.hasAccel?T.z:null,ios:T.ios,samsung:T.samsung};
+    syncAxis(sample,sensorEvent);
+    // v9j: after a pause on the closed small Chrome screen nothing moves until a fresh valid sample of the steering source arrived
+    if(T.resync && !resyncStep(now, sensorEvent && src===(T.cChannel[0]==='a' || (T.cChannel==='grav' && !T.hasOrient) ? 'm' : 'o'), sample)) { T.out=0; classicTime=0; return; }
+    const angle=tiltAngle(), vp=window.__eadVP;
+    if(window.__eadDevice.fold && T.reportedAngle!==undefined && angle!==T.reportedAngle) { T.rotationUntil=now+300; T.frameAngle=undefined; T.frameSince=0; }
+    T.reportedAngle=angle;
+    // v9c: the screen-frame gravity lean prefers the fused orientation; a stalled orientation stream falls back to fresh acceleration.
+    const grav=T.cChannel==='grav', orientFresh=T.hasOrient && now-T.tOrient<SOURCE_TIMEOUT;
+    T.effAngle=T.frameAngle!==undefined ? T.frameAngle : angle;
+    sample.angle=T.effAngle;
+    if(window.__eadDevice.fold && now<(T.rotationUntil||0)) { T.out=0; classicTime=0; return; }
+    T.classic=window.__eadDevice.fold || T.classicWanted!==false;
+    if(detection && sensorEvent) { if(detection.start === null) detection.start=now; detection.samples.push(sample); }
+    if(!T.classic) return;
+    // v10b: a stalled orientation stream (some Samsung builds stop deviceorientation after a rotation) falls back to the devicemotion gravity roll
+    const gammaStale=T.cChannel==='gamma' && !window.__eadDevice.fold && !orientFresh && T.hasAccel && now-T.tAccel<SOURCE_TIMEOUT;
+    const input=(grav || gammaStale) && !orientFresh ? {ax:sample.ax,ay:sample.ay,az:sample.az,ios:T.ios,angle:gammaStale?0:sample.angle} : sample;
+    T.staleFallback=gammaStale;
+    T.gravSrc=grav ? (orientFresh ? 'orient' : 'accel') : '-';
+    if(grav) frameCheck(input, now, angle);
+    const v=window.__eadTiltAxis.value(input,gammaStale?'grav':T.cChannel,T.ios);
+    const fromAccel=T.cChannel[0]==='a' || ((grav || gammaStale) && !orientFresh);
+    const eventTime=fromAccel?T.tAccel:T.tOrient;
+    if(v === null || now-eventTime >= SOURCE_TIMEOUT) { T.ok=false; T.out=0; return; }
+    T.rollRaw=v; T.roll=v; T.rel=(v-T.cBase)*T.cSign; T.src=T.cChannel; T.lastAccepted=eventTime;
+    const sampleTime=(fromAccel?T.cAccelStamp:T.cOrientStamp) || eventTime;
+    if(sensorEvent && grav) { restVals.push(now,v); while(restVals.length && now-restVals[0]>1500) restVals.splice(0,2); }
+    if(sampleTime !== classicTime) {
+      const dt=classicTime ? Math.max(0,sampleTime-classicTime) : 16.67;
+      T.out=window.__eadTiltAxis.smooth(T.out,window.__eadTiltAxis.map(v,T.cBase,T.cSign),1-Math.pow(0.5,dt/16.67));
+      classicTime=sampleTime;
+    }
+    T.ok=true;
+    if(!T.pausedJS) { const G=T.good; G.channel=T.cChannel; G.sign=T.cSign; G.base=T.cBase; G.key=T.axisKey; G.source=T.axisSource; G.set=true; }
+  }
+  // v9c: if the reported screen angle disagrees with gravity by > 65 deg for 0.7 s while the screen is >= 30 deg from flat, the sensor frame
+  // and the screen angle do not match (cover-screen natural frame, natural-landscape inner display, stale angle): use the angle gravity implies.
+  // A steering lean never needs > 45 deg (the output saturates there), and the check re-runs continuously, so a wrong pick heals itself.
+  function frameCheck(input, now, reported) {
+    const g=window.__eadTiltAxis.down(input,T.ios); if(!g) return;
+    const r=window.__eadTiltAxis.gravityAngle(g,T.effAngle);
+    if(r.mag<0.5 || r.deviation<=65) { T.frameSince=0; return; }
+    if(!T.frameSince) { T.frameSince=now; return; }
+    if(now-T.frameSince<700 || r.angle===T.effAngle) return;
+    T.frameAngle=r.angle===reported ? undefined : r.angle; T.frameSince=0; T.effAngle=r.angle; T.out=0; classicTime=0;
+    T.frameNote='gravity frame '+r.angle+' (screen said '+reported+')';
+  }
+  const MAXD = 45, DEAD = 1.5, EMA = 0.2, SOURCE_TIMEOUT = 1500, RECOVER_MS = 200;
+  let tLast = 0, freshSince = 0;
+  function take(deg, src, now) {
+    if (!Number.isFinite(deg)) return;
+    T.rollRaw = deg; T.src = src; T.lastAccepted = now;
+    const dt = Math.max(4, Math.min(200, now - tLast)); tLast = now;
+    const a = 1 - Math.pow(1 - EMA, dt / 16.67);
+    if (!T.inited) { T.roll = deg; T.inited = true; }
+    else T.roll += (deg - T.roll) * a;
+    T.rel = Math.max(-MAXD, Math.min(MAXD, (T.roll - T.base) * T.sign));
+    T.out = Math.abs(T.rel) < DEAD ? 0 : T.rel / MAXD;
+    if (!freshSince) freshSince = now;
+    if (now - freshSince >= RECOVER_MS) T.ok = true;
+  }
+  // Choose once per run. Give fused orientation one timeout to arrive before choosing accel.
+  // A stalled source becomes invalid; it never silently changes the run's steering axes.
+  window.__eadTiltRun = function (playing=true) {
+    const now = stamp();
+    // v9c: no automatic channel guess in fold landscape - the gravity lean is the only meaningful channel there.
+    if(T.classic) { if(playing && !T.axisLocked && !autoDetectStarted && !foldLandscape()) { autoDetectStarted=true; window.__eadDetectAxis(true); } return; }
+    T.srcLocked = T.hasOrient && now - T.tOrient < SOURCE_TIMEOUT ? 'orient' :
+      (T.hasAccel && now - T.tAccel < SOURCE_TIMEOUT && now - T.tListen >= SOURCE_TIMEOUT ? 'motion' : '-');
+    T.ok = false; freshSince = 0;
+  };
+  function select(src, now) {
+    if (T.srcLocked === '-') {
+      if (src === 'orient' || now - T.tListen >= SOURCE_TIMEOUT) T.srcLocked = src;
+    }
+    return T.srcLocked === src;
+  }
+  const motionTimes=[], orientTimes=[];
+  function onMotion(e) {
+    motionTimes.push(stamp());
+    T.events++; T.nMotion++;
+    const a = e.accelerationIncludingGravity;
+    if (!a || ![a.x, a.y, a.z].every(Number.isFinite) || Math.hypot(a.x, a.y, a.z) < 0.1) { if (a) T.rejected++; return; }
+    // v9j: in strict mode (closed small Chrome screen, or before the first valid sample) a near-zero vector is not gravity
+    if (strict() && (Math.hypot(a.x, a.y, a.z) < 2 || e.timeStamp === T.cAccelStamp)) { T.rejected++; return; }
+    const now = stamp(), sign = T.ios ? 1 : -1;
+    T.validMotionT = now; if (T.gate === 'waiting') gateEval();
+    T.x = a.x; T.y = a.y; T.z = a.z; T.hasAccel = true; T.tAccel = now; T.cAccelStamp=Number.isFinite(e.timeStamp)?e.timeStamp:now;
+    T.gx = sign * a.x / Math.hypot(a.x, a.y, a.z);
+    // Gravity fallback cannot resolve rotation about gravity near vertical. No pose-dependent gain.
+    if (!T.classic && select('motion', now)) take(Math.asin(Math.max(-1, Math.min(1, T.gx))) * 180 / Math.PI, 'motion', now);
+    clearMotionNotice();
+    // v10b: steering by a fresh orientation stream does not need the 60 Hz motion events (skips an allocation + sync per event)
+    if (!(T.classic && (T.cChannel==='gamma' || T.cChannel==='beta') && T.hasOrient && now-T.tOrient<SOURCE_TIMEOUT && !detection && !T.resync && !T.staleFallback)) classicSample(now,true,'m');
+  }
+  function onOrient(e) {
+    orientTimes.push(stamp());
+    T.events++; T.nOrient++;
+    if (![e.beta, e.gamma].every(Number.isFinite)) { T.rejected++; return; }
+    T.nOrientData = (T.nOrientData || 0) + 1;
+    if (invalidOrient(e)) { T.rejected++; return; }
+    const now = stamp();
+    T.firstValid = true; T.validT = now; if (T.gate === 'waiting') gateEval();
+    T.beta = e.beta; T.gamma = e.gamma; T.alpha = Number.isFinite(e.alpha) ? e.alpha : 0;
+    T.hasOrient = true; T.tOrient = now; T.cOrientStamp=Number.isFinite(e.timeStamp)?e.timeStamp:now;
+    // gamma is the fused long-axis lean and keeps its gain at pitch 0..80 degrees.
+    // W3C beta beyond +/-90 puts the device upside down: reverse the lateral axis.
+    const roll = e.gamma * (Math.abs(e.beta) > 90 ? -1 : 1);
+    if (!T.classic && select('orient', now)) take(roll, 'orient', now);
+    clearMotionNotice();
+    if (!(T.classic && T.cChannel[0]==='a' && T.hasAccel && now-T.tAccel<SOURCE_TIMEOUT && !detection && !T.resync)) classicSample(now,true,'o');
+  }
+  // CALIBRATE: zero against the CURRENT (smoothed) reading, with visible feedback
+  function toast(msg) {
+    let t = document.getElementById('eadtoast');
+    if (!t) { t = document.createElement('div'); t.id = 'eadtoast'; document.body.appendChild(t); }
+    t.textContent = msg; t.style.display = 'block'; clearTimeout(toast.h); toast.h = setTimeout(function () { t.style.display = 'none'; }, 2600);
+  }
+  window.__eadCal = function () {
+    if (!T.ok) { toast('CALIBRATE: no fresh sensor reading yet'); return T.base; }
+    const base=T.roll;
+    if(T.classic) { T.cBase=base; saveClassic(); }
+    else { T.base=base; try { localStorage.setItem('ead_tilt_base',String(base)); } catch(e) {} }
+    T.rel=0; T.out=0; T.calCount++; T.calNote='manual zero '+base.toFixed(1);
+    toast('CALIBRATED - this is now level ('+base.toFixed(1)+' deg)'); return base;
+  };
+  window.__eadFlip = function () {
+    if(T.classic) { T.cSign=-T.cSign; if(window.__eadDevice.fold) saveClassic(); } else T.sign=-T.sign;
+    T.rel=-T.rel; T.out=-T.out;
+    const sign=T.classic?T.cSign:T.sign;
+    toast('tilt direction '+(sign>0?'normal':'REVERSED')); return sign;
+  };
+  function listen() {
+    if (T.listening) return;
+    T.tListen = stamp(); T.listening = true;
+    window.addEventListener('devicemotion', onMotion);
+    window.addEventListener('deviceorientation', onOrient);
+  }
+  T.listen = listen;
+  function health(n) {
+    const fl=foldLandscape(), ch=T.classic ? T.cChannel+(T.cChannel==='grav'?'('+T.gravSrc+')':'') : 'fused '+T.srcLocked;
+    let status='TILT OK';
+    if(!T.hasOrient && !T.hasAccel) status='TILT WAITING - no sensor event yet (permission '+T.state+')';
+    else if(!T.ok) status='TILT STALE - no fresh sensor data';
+    else if(T.satSince && n-T.satSince>2000) status='TILT SATURATED - output pinned at '+(T.out>0?'RIGHT':'LEFT')+' (CALIBRATE re-zeroes)';
+    // kept short: the DBG panel grows upwards and must not push its buttons over a phone's play area
+    let why=fl ? 'fold lean @'+T.effAngle+' fs '+T.fsResult : (window.__eadDevice.fold ? 'fold portrait: paused' : T.classic ? 'phone '+T.cChannel+'/45 (v8)' : 'phone fused');
+    if(T.frameNote && fl) why+=' | '+T.frameNote;
+    if(T.lastReset) why+=' | auto-reset: '+T.lastReset;
+    if(T.migrated.length) why+=' | cleared '+T.migrated.length+' old keys';
+    const sign=T.classic?T.cSign:T.sign, base=T.classic?T.cBase:T.base;
+    return status+' | ch '+ch+' '+(sign>0?'+':'-')+' base '+f(base)+' '+T.axisSource+' raw '+f(T.roll)+' out '+f(T.out,2)+' o'+f(T.orientEPS,0)+'/s m'+f(T.motionEPS,0)+'/s | '+why;
+  }
+  function classicFrame() { if(T.classic || detection) classicSample(stamp()); requestAnimationFrame(classicFrame); }
+  requestAnimationFrame(classicFrame);
+  // freshness is judged in JS so Godot only has to read plain numbers
+  setInterval(function () {
+    const n = stamp();
+
+    if(detection && detection.start !== null) {
+      if(n-detection.start >= 1900) {
+        const d=detection, a=window.__eadTiltAxis.detect(d.samples,T.hasOrient,window.__eadDevice.fold && window.__eadVP.lw>window.__eadVP.lh); detection=null;
+        if(window.__eadTiltAxis.autoKeeps(a, d.automatic, T.cChannel)) {
+          // v9j: only the explicit TILT SETUP (left, then right) may reverse the channel in use.
+          T.autoNote='auto window kept '+a.channel+' '+(T.cSign>0?'+':'-')+(a.sign!==1?' (order said -)':'');
+        } else if(a.detected) {
+          // A base from beta/gravity must never carry into gamma's absolute level.
+          T.cBase=a.channel==='gamma' || a.channel==='grav' ? (T.cChannel===a.channel?T.cBase:0) : a.base;
+          T.cChannel=a.channel; T.cSign=a.sign; T.axisSource='detected'; T.out=0; classicTime=0;
+          if(!d.automatic) { T.axisLocked=true; saveClassic(); toast('Tilt axis: '+a.channel); }
+        } else if(!d.automatic) toast('No tilt detected - previous setup kept');
+      } else if(!detection.automatic) toast('TILT LEFT, THEN RIGHT — '+Math.ceil((1900-(n-detection.start))/1000));
+    }
+
+    // v9c: a stored base that keeps a still, near-level hold > 35 deg off is reset (the "only far left" state).
+    if(T.classic && T.cChannel==='grav' && T.ok) {
+      const vals=[]; for(let i=1;i<restVals.length;i+=2) vals.push(restVals[i]);
+      if(window.__eadTiltAxis.staleBase(vals,T.cBase)) {
+        T.lastReset='base '+T.cBase.toFixed(1)+' was '+Math.abs(vals[vals.length>>1]-T.cBase).toFixed(0)+' deg off rest';
+        T.cBase=0; T.autoResets++; T.out=0; classicTime=0; restVals.length=0; saveClassic(); toast('TILT SATURATED - recalibrating');
+      }
+    }
+    if(Math.abs(T.out)>=0.98 && T.ok) { if(!T.satSince) T.satSince=n; } else T.satSince=0;
+    T.health=health(n);
+    T.timedOut = T.listening && n - T.tListen > SOURCE_TIMEOUT && (!T.lastAccepted || n - T.lastAccepted > SOURCE_TIMEOUT);
+    if (T.timedOut) { T.ok = false; freshSince = 0; }
+    while(motionTimes.length && n-motionTimes[0]>1000) motionTimes.shift();
+    while(orientTimes.length && n-orientTimes[0]>1000) orientTimes.shift();
+    T.motionEPS=motionTimes.length; T.orientEPS=orientTimes.length;
+    T.windowOrientation=window.orientation; T.screenOrientation=screen.orientation && screen.orientation.angle;
+    T.angle = screenAngle();
+    A.ctxStates = window.__eadCtxs.map(function (c) { return c.state; });
+    if (window.__eadCtxs.length) A.ctxState = window.__eadCtxs[window.__eadCtxs.length - 1].state;
+    try { A.session = (navigator.audioSession && navigator.audioSession.type) || 'n/a'; } catch (e) {}
+    try { A.htmlAudio = silent ? (silent.paused ? 'paused' : 'playing') : 'off'; } catch (e) {}
+    try { A.jsState = jsCtx ? jsCtx.state : 'none'; } catch (e) {}
+  }, 100);
+
+  // Fixed class layouts: viewport measurements remain stable through browser noise.
+  // v10a: phone portrait and fold landscape fields are locked to the device body: the canvas is counter-rotated against OS rotation.
+  window.__eadVP = { w: window.innerWidth, h: window.innerHeight, ow: window.innerWidth, oh: window.innerHeight, lw: window.innerWidth, lh: window.innerHeight, deg: 0, why: '-',
+    vvw: 0, vvh: 0, vvScale: 1, safeTop: 0, safeBottom: 0, safeL: 0, safeR: 0, rawT: 0, rawB: 0, dpr: 1, n: 0 };
+  window.__eadRot = { deg: 0, last: 0 };
+  (function () {
+    const VP = window.__eadVP, R = window.__eadRot;
+    const origW = Object.getOwnPropertyDescriptor(window, 'innerWidth'), origH = Object.getOwnPropertyDescriptor(window, 'innerHeight');
+    let probe = null, sT = null, sB = null, sL = null, sR = null;
+    const horizontal=matchMedia('(horizontal-viewport-segments: 2)'), vertical=matchMedia('(vertical-viewport-segments: 2)'), coarse=matchMedia('(pointer:coarse)'), anyCoarse=matchMedia('(any-pointer:coarse)');
+    let seenTouch=false;
+    const ua=navigator.userAgent, fine=matchMedia('(pointer:fine)');
+    const area={x:0,y:0,width:0,height:0}, paneArea={x:0,y:0,width:0,height:0};
+    const paneSignature=[];
+    let signatureChanged=false, signatureIndex=0;
+    function signature(v) { if(paneSignature[signatureIndex]!==v) signatureChanged=true; paneSignature[signatureIndex++]=v; }
+    const foldInput={width:0,height:0,segments:0,ua,override:'auto',touch:false};
+    const styleEl = document.createElement('style'); styleEl.id = 'eadrot'; (document.head || document.documentElement).appendChild(styleEl);
+    function mk(id, css) { const d = document.createElement('div'); d.id = id; d.style.cssText = css; document.body.appendChild(d); return d; }
+    function mkProbe() {
+      if (probe || !document.body) return;
+      probe = mk('eadprobe', '');
+      sT = mk('eadsafe', ''); sB = mk('eadsafeb', ''); sL = mk('eadsafel', ''); sR = mk('eadsafer', '');
+    }
+    const stableLayout=window.__eadStableLayout.create();
+    let lastOverride=window.__eadDevice.override;
+    const cssState={w:0,h:0,deg:null,lw:0,lh:0};
+    function applyCss() {
+      if(cssState.w===VP.w && cssState.h===VP.h && cssState.deg===VP.deg && cssState.lw===VP.lw && cssState.lh===VP.lh) return;
+      cssState.w=VP.w; cssState.h=VP.h; cssState.deg=VP.deg; cssState.lw=VP.lw; cssState.lh=VP.lh;
+      const left = Math.round((VP.lw - VP.w) / 2), top = Math.round((VP.lh - VP.h) / 2);
+      styleEl.textContent = '#canvas{position:fixed!important;left:' + left + 'px!important;top:' + top + 'px!important;width:' + VP.w + 'px!important;height:' + VP.h +
+        'px!important;transform:' + (VP.deg ? 'rotate(' + VP.deg + 'deg)' : 'none') + '!important;transform-origin:50% 50%!important;transition:none!important;animation:none!important}';
+    }
+    function measure(full) {
+      mkProbe(); if (!probe) return;
+      const vvNow=window.visualViewport;
+      const probeWidth=vvNow && vvNow.scale===1 ? vvNow.width : probe.clientWidth;
+      const probeHeight=vvNow && vvNow.scale===1 ? vvNow.height : probe.clientHeight;
+      VP.ow = origW && origW.get ? origW.get.call(window) : VP.ow; VP.oh = origH && origH.get ? origH.get.call(window) : VP.oh;
+      if (probeWidth > 50 && probeHeight > 50) { VP.lw=probeWidth; VP.lh=probeHeight; }
+
+      const D=window.__eadDevice;
+      const segments=(window.viewport&&window.viewport.segments)||(window.visualViewport&&window.visualViewport.segments);
+      foldInput.width=VP.ow; foldInput.height=VP.oh;
+      foldInput.segments=horizontal.matches||vertical.matches?2:(segments?segments.length:0);
+      foldInput.ua=D.model||ua; foldInput.override=D.override;
+      foldInput.touch=seenTouch || navigator.maxTouchPoints>0 || anyCoarse.matches || coarse.matches || 'ontouchstart' in window || T.ios;
+      VP.touch=foldInput.touch;
+      foldInput.screenWidth=screen.width; foldInput.screenHeight=screen.height;
+      const decision=window.__eadFold.decision(foldInput,D.fold);
+      D.why=decision.why;
+      D.modeSource=D.override==='auto'?'auto':D.source==='url'?'forced-url':'forced-option';
+      D.debug='viewport '+VP.ow+'x'+VP.oh+' screen '+screen.width+'x'+screen.height+' dpr '+devicePixelRatio+
+        ' angle '+(Number.isFinite(screen.orientation&&screen.orientation.angle)?screen.orientation.angle:Number.isFinite(window.orientation)?window.orientation:'n/a')+
+        ' maxTouchPoints '+navigator.maxTouchPoints+' pointer coarse '+coarse.matches+' fine '+fine.matches+
+        ' source '+D.modeSource+' why '+D.why;
+      const stable=stableLayout({width:VP.lw,height:VP.lh,fold:decision.fold,angle:screenAngle(),touch:VP.touch,
+        force:lastOverride!==D.override},performance.now());
+      lastOverride=D.override;
+      VP.lw=stable.width; VP.lh=stable.height;
+      const fold=stable.fold;
+      window.__eadFoldReload.accept(fold);
+      if(fold!==D.fold) T.lockTried=false;
+      D.fold=fold;
+      VP.fold=D.fold; VP.overlay=false; VP.layout=D.fold?'landscape fold':'portrait fixed';
+      const deg = stable.deg;
+      VP.why = "fixed class layout; picture locked to the device body (css counter-rotation " + deg + " deg)";
+      VP.deg = R.deg = deg;
+      VP.layout = (D.fold ? 'landscape fold' : 'portrait fixed') + (deg ? ' (counter-rotated ' + deg + ')' : '');
+      const swap = Math.abs(deg) === 90;
+      VP.w = swap ? VP.lh : VP.lw; VP.h = swap ? VP.lw : VP.lh;      // what the engine sees: always the class's own shape
+      {
+        const t = sT.offsetHeight, b = sB.offsetHeight, l = sL.offsetWidth, rr = sR.offsetWidth;
+        VP.rawT = t; VP.rawB = b; VP.safeL = l; VP.safeR = rr;
+        // the logical top/bottom are the screen's top/bottom rotated with the content
+        if (deg === 0) { VP.safeTop = t; VP.safeBottom = b; VP.safeLeft = l; VP.safeRight = rr; }
+        else if (deg === -90) { VP.safeTop = l; VP.safeBottom = rr; VP.safeLeft = b; VP.safeRight = t; }
+        else if (deg === 90) { VP.safeTop = rr; VP.safeBottom = l; VP.safeLeft = t; VP.safeRight = b; }
+        else { VP.safeTop = b; VP.safeBottom = t; VP.safeLeft = rr; VP.safeRight = l; }
+        area.x=VP.safeLeft; area.y=VP.safeTop; area.width=VP.w-VP.safeLeft-VP.safeRight; area.height=VP.h-VP.safeTop-VP.safeBottom;
+        // Only reserve a pane for an actual occluding gap; a crease alone uses the whole display.
+        const segments = (window.viewport && window.viewport.segments) || (window.visualViewport && window.visualViewport.segments);
+        if (segments && segments.length > 1) {
+          signatureChanged=false; signatureIndex=0;
+          signature(VP.w); signature(VP.h); signature(deg);
+          signature(area.x); signature(area.y); signature(area.width); signature(area.height);
+          for(let i=0;i<segments.length;i++) { const q=segments[i]; signature(q.left); signature(q.top); signature(q.right); signature(q.bottom); }
+          if(paneSignature.length!==signatureIndex) { paneSignature.length=signatureIndex; signatureChanged=true; }
+          if(signatureChanged) {
+          Object.assign(paneArea,area);
+          const segs = Array.from(segments);
+          const gap = segs.some((a,i) => segs.some((b,j) => i !== j &&
+            ((a.right < b.left && Math.min(a.bottom,b.bottom)>Math.max(a.top,b.top)) ||
+             (a.bottom < b.top && Math.min(a.right,b.right)>Math.max(a.left,b.left)))));
+          if (gap) {
+            const panes = segs.map(q => {
+              const pts = [[q.left,q.top],[q.right,q.top],[q.left,q.bottom],[q.right,q.bottom]].map(p=>toLocal(...p));
+              const x = Math.max(area.x, Math.min(...pts.map(p=>p[0]))), y = Math.max(area.y, Math.min(...pts.map(p=>p[1])));
+              return {x,y,width:Math.min(area.x+area.width,Math.max(...pts.map(p=>p[0])))-x,height:Math.min(area.y+area.height,Math.max(...pts.map(p=>p[1])))-y};
+            }).filter(q=>q.width>0&&q.height>0).sort((a,b)=>b.width*b.height-a.width*a.height);
+            if (panes.length) Object.assign(paneArea,panes[0]);
+          }
+          }
+          Object.assign(area,paneArea);
+        }
+        if (VP.fold && !(segments && segments.length > 1)) {
+          // v9c: the fold field is height-limited. A side inset (landscape camera cutout) only has to stay clear of the field, so centre on the
+          // whole viewport rather than shifting by the inset difference. No size cap: large inner screens use their full height.
+          const side=Math.max(VP.safeLeft,VP.safeRight); area.x=side; area.width=VP.w-2*side;
+        }
+        // Fit the class's fixed up direction without rotating the canvas. Scenery fills the margins.
+        if ((!VP.fold && area.width>area.height) || (VP.fold && area.height>area.width)) {
+          const targetW=area.height, targetH=area.width;
+          const fit=Math.min(area.width/targetW,area.height/targetH);
+          const fw=targetW*fit, fh=targetH*fit;
+          area.x+=(area.width-fw)/2; area.y+=(area.height-fh)/2;
+          area.width=fw; area.height=fh;
+        }
+        VP.playX = area.x; VP.playY = area.y; VP.playW = area.width; VP.playH = area.height;
+        VP.nextFieldW=__eadPickFieldW(area.width,area.height,VP.fold);
+        VP.fieldScale=VP.fold?Math.min(area.width/VP.nextFieldW,area.height/1280):0;
+        const vv = window.visualViewport; if (vv) { VP.vvw = vv.width; VP.vvh = vv.height; VP.vvScale = vv.scale; }
+        VP.dpr = window.devicePixelRatio;
+        const cv = document.getElementById('canvas'); if (cv) { VP.cw = cv.width; VP.ch = cv.height; }
+      }
+      VP.n++;
+      applyCss();
+    }
+    try {
+      Object.defineProperty(window, 'innerWidth', { get: function () { return VP.w; }, configurable: true });
+      Object.defineProperty(window, 'innerHeight', { get: function () { return VP.h; }, configurable: true });
+    } catch (e) {}
+    function rememberTouch(ev) {
+      if (!seenTouch && (ev.pointerType==='touch' || ev.type==='touchstart')) {
+        seenTouch=true; measure();
+      }
+    }
+    window.addEventListener('pointerdown',rememberTouch,true);
+    window.addEventListener('touchstart',rememberTouch,true);
+    // ---- input mapping: screen (layout viewport) coordinates -> the canvas's own (unrotated) css pixels
+    function toLocal(cx, cy) {
+      const th = -VP.deg * Math.PI / 180, c = Math.cos(th), s = Math.sin(th), dx = cx - VP.lw / 2, dy = cy - VP.lh / 2;
+      return [dx * c - dy * s + VP.w / 2, dx * s + dy * c + VP.h / 2];
+    }
+    window.__eadToLocal = toLocal;
+    window.__eadNativeRect = function () { return Element.prototype.__eadNativeBCR.call(document.getElementById("canvas")); };
+    function patch(proto) {
+      if (!proto) return;
+      const dx = Object.getOwnPropertyDescriptor(proto, 'clientX'), dy = Object.getOwnPropertyDescriptor(proto, 'clientY');
+      if (!dx || !dy || !dx.get || !dy.get) return;
+      Object.defineProperty(proto, 'clientX', { configurable: true, enumerable: true, get: function () { const x = dx.get.call(this); return VP.deg || VP.w !== VP.lw ? toLocal(x, dy.get.call(this))[0] : x; } });
+      Object.defineProperty(proto, 'clientY', { configurable: true, enumerable: true, get: function () { const y = dy.get.call(this); return VP.deg || VP.h !== VP.lh ? toLocal(dx.get.call(this), y)[1] : y; } });
+    }
+    try { patch(window.MouseEvent && MouseEvent.prototype); patch(window.Touch && Touch.prototype); } catch (e) {}
+    try {
+      const origBCR = Element.prototype.getBoundingClientRect;
+      Element.prototype.__eadNativeBCR = origBCR;
+      Element.prototype.getBoundingClientRect = function () {
+        if (this.id === 'canvas' && (VP.deg || VP.w !== VP.lw || VP.h !== VP.lh)) { return { x: 0, y: 0, left: 0, top: 0, width: VP.w, height: VP.h, right: VP.w, bottom: VP.h, toJSON: function () { return this; } }; }
+        return origBCR.call(this);
+      };
+    } catch (e) {}
+    window.__eadMeasure = measure;
+    document.addEventListener('DOMContentLoaded', function () { measure(); });
+    ['resize', 'orientationchange'].forEach(function (ev) { window.addEventListener(ev, function () { measure(); }, true); });
+    try { if (window.visualViewport) { window.visualViewport.addEventListener('resize', function () { measure(); }); window.visualViewport.addEventListener('scroll', function () { measure(); }); } } catch (e) {}
+    try { if (screen.orientation && screen.orientation.addEventListener) screen.orientation.addEventListener('change', function () { measure(); }); } catch (e) {}
+    // v10b: no per-frame measure() (DOM reads every frame cost frame time on low-end Android); resize/orientation/visualViewport events + the 100 ms timer cover it
+    setInterval(function () { measure(true); }, 100);
+  })();
+
+  // ===== v6 KEEP SCREEN AWAKE: Screen Wake Lock API, falling back to a hidden looping video (what NoSleep.js does).  Default ON; Godot's OPTIONS toggles it.
+  window.__eadWake = { want: true, active: false, method: '-', note: '-', supported: ('wakeLock' in navigator), tries: 0 };
+  (function () {
+    const W = window.__eadWake; let lock = null, vid = null;
+    function video() {
+      if (vid) return vid;
+      vid = document.createElement('video'); vid.setAttribute('playsinline', ''); vid.setAttribute('webkit-playsinline', ''); vid.muted = true; vid.loop = true;
+      vid.setAttribute('muted', ''); vid.style.cssText = 'position:fixed;left:0;top:0;width:2px;height:2px;opacity:0.01;pointer-events:none;z-index:-1';
+      vid.src = 'data:video/mp4;base64,AAAAIGZ0eXBpc29tAAACAGlzb21pc28yYXZjMW1wNDEAAAN3bW9vdgAAAGxtdmhkAAAAAAAAAAAAAAAAAAAD6AAAA+gAAQAAAQAAAAAAAAAAAAAAAAEAAAAAAAAAAAAAAAAAAAABAAAAAAAAAAAAAAAAAABAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAgAAAqJ0cmFrAAAAXHRraGQAAAADAAAAAAAAAAAAAAABAAAAAAAAA+gAAAAAAAAAAAAAAAAAAAAAAAEAAAAAAAAAAAAAAAAAAAABAAAAAAAAAAAAAAAAAABAAAAAADAAAAAwAAAAAAAkZWR0cwAAABxlbHN0AAAAAAAAAAEAAAPoAAAQAAABAAAAAAIabWRpYQAAACBtZGhkAAAAAAAAAAAAAAAAAAAoAAAAKABVxAAAAAAALWhkbHIAAAAAAAAAAHZpZGUAAAAAAAAAAAAAAABWaWRlb0hhbmRsZXIAAAABxW1pbmYAAAAUdm1oZAAAAAEAAAAAAAAAAAAAACRkaW5mAAAAHGRyZWYAAAAAAAAAAQAAAAx1cmwgAAAAAQAAAYVzdGJsAAAAwXN0c2QAAAAAAAAAAQAAALFhdmMxAAAAAAAAAAEAAAAAAAAAAAAAAAAAAAAAADAAMABIAAAASAAAAAAAAAABFUxhdmM2MS4xOS4xMDEgbGlieDI2NAAAAAAAAAAAAAAAGP//AAAAN2F2Y0MBZAAK/+EAGWdkAAqscgRN7ARAAAADAEAAAAMCg8SJYRgBAAdo6EODksiw/fj4AAAAABBwYXNwAAAAAQAAAAEAAAAUYnRydAAAAAAAABgQAAAAAAAAABhzdHRzAAAAAAAAAAEAAAAFAAAIAAAAABRzdHNzAAAAAAAAAAEAAAABAAAAOGN0dHMAAAAAAAAABQAAAAEAABAAAAAAAQAAKAAAAAABAAAQAAAAAAEAAAAAAAAAAQAACAAAAAAcc3RzYwAAAAAAAAABAAAAAQAAAAUAAAABAAAAKHN0c3oAAAAAAAAAAAAAAAUAAALOAAAADQAAAA0AAAANAAAADQAAABRzdGNvAAAAAAAAAAEAAAOnAAAAYXVkdGEAAABZbWV0YQAAAAAAAAAhaGRscgAAAAAAAAAAbWRpcmFwcGwAAAAAAAAAAAAAAAAsaWxzdAAAACSpdG9vAAAAHGRhdGEAAAABAAAAAExhdmY2MS43LjEwMwAAAAhmcmVlAAADCm1kYXQAAAKvBgX//6vcRem95tlIt5Ys2CDZI+7veDI2NCAtIGNvcmUgMTY0IHIzMTA4IDMxZTE5ZjkgLSBILjI2NC9NUEVHLTQgQVZDIGNvZGVjIC0gQ29weWxlZnQgMjAwMy0yMDIzIC0gaHR0cDovL3d3dy52aWRlb2xhbi5vcmcveDI2NC5odG1sIC0gb3B0aW9uczogY2FiYWM9MSByZWY9MTYgZGVibG9jaz0xOjA6MCBhbmFseXNlPTB4MzoweDEzMyBtZT11bWggc3VibWU9MTAgcHN5PTEgcHN5X3JkPTEuMDA6MC4wMCBtaXhlZF9yZWY9MSBtZV9yYW5nZT0yNCBjaHJvbWFfbWU9MSB0cmVsbGlzPTIgOHg4ZGN0PTEgY3FtPTAgZGVhZHpvbmU9MjEsMTEgZmFzdF9wc2tpcD0xIGNocm9tYV9xcF9vZmZzZXQ9LTIgdGhyZWFkcz0xIGxvb2thaGVhZF90aHJlYWRzPTEgc2xpY2VkX3RocmVhZHM9MCBucj0wIGRlY2ltYXRlPTEgaW50ZXJsYWNlZD0wIGJsdXJheV9jb21wYXQ9MCBjb25zdHJhaW5lZF9pbnRyYT0wIGJmcmFtZXM9OCBiX3B5cmFtaWQ9MiBiX2FkYXB0PTIgYl9iaWFzPTAgZGlyZWN0PTMgd2VpZ2h0Yj0xIG9wZW5fZ29wPTAgd2VpZ2h0cD0yIGtleWludD0yNTAga2V5aW50X21pbj01IHNjZW5lY3V0PTQwIGludHJhX3JlZnJlc2g9MCByY19sb29rYWhlYWQ9NjAgcmM9Y3JmIG1idHJlZT0xIGNyZj00MC4wIHFjb21wPTAuNjAgcXBtaW49MCBxcG1heD02OSBxcHN0ZXA9NCBpcF9yYXRpbz0xLjQwIGFxPTE6MS4wMACAAAAAF2WIgQACX/7eI8CmHkdF1XEgcGGcjas5AAAACUGaCI2If/8G3AAAAAlBnhBHEEP/XUEAAAAJAZ4YJoh//2HAAAAACQGeGG1If/9hwQ==';
+      document.body.appendChild(vid); return vid;
+    }
+    function viaVideo() {
+      try { const v = video(); const p = v.play(); if (p && p.then) return p.then(function () { W.active = true; W.method = 'video'; }).catch(function (e) { W.active = false; W.note = 'video: ' + (e && e.name); });
+        W.active = true; W.method = 'video'; } catch (e) { W.note = 'video err'; }
+    }
+    function acquire() {
+      if (!W.want || document.hidden) return; W.tries++;
+      if (lock && !lock.released) { W.active = true; return; }
+      if (navigator.wakeLock && navigator.wakeLock.request) {
+        navigator.wakeLock.request('screen').then(function (l) {
+          lock = l; W.active = true; W.method = 'wakeLock'; W.note = 'ok';
+          l.addEventListener('release', function () { lock = null; if (window.__eadLife) window.__eadLife.add('wakelock', 'released'); if (W.method === 'wakeLock') { W.active = false; } });
+        }).catch(function (e) { W.note = 'wakeLock: ' + (e && e.name); viaVideo(); });
+      } else viaVideo();
+    }
+    function release() {
+      try { if (lock) { lock.release(); lock = null; } } catch (e) {}
+      try { if (vid) vid.pause(); } catch (e) {}
+      W.active = false; W.method = 'off';
+    }
+    W.set = function (on) { W.want = !!on; if (on) acquire(); else release(); };
+    ['touchend', 'click', 'keydown', 'pointerup'].forEach(function (ev) { window.addEventListener(ev, function () { if (W.want && !W.active) acquire(); }, true); });
+    document.addEventListener('visibilitychange', function () { if (!document.hidden && W.want) { W.active = false; acquire(); } });
+    document.addEventListener('DOMContentLoaded', function () { if (W.want) acquire(); });
+  })();
+
+  // ---- canvas always fills the visible viewport: iOS often reports a stale innerWidth/innerHeight right after rotation or a toolbar
+  //      change, so re-fire `resize` a few times and whenever the canvas disagrees with the window.
+  function kick() { [0, 80, 250, 600, 1200, 2500].forEach(function (d) { setTimeout(function () { window.dispatchEvent(new Event('resize')); }, d); }); }
+  window.addEventListener('orientationchange', function () { if(window.__eadDevice.fold){T.rotationUntil=stamp()+300; T.out=0;} T.angle = screenAngle(); kick(); });
+  try { if (screen.orientation && screen.orientation.addEventListener) screen.orientation.addEventListener('change', function(){if(window.__eadDevice.fold){T.rotationUntil=stamp()+300;T.out=0;}kick();}); } catch (e) {}
+  try { if (window.visualViewport) window.visualViewport.addEventListener('resize', kick); } catch (e) {}
+  setInterval(function () {
+    const c = document.getElementById('canvas'); if (!c) return;
+    const r = c.getBoundingClientRect();
+    if (Math.abs(r.width - window.innerWidth) > 2 || Math.abs(r.height - window.innerHeight) > 2) { window.__eadMeasure && window.__eadMeasure(); window.dispatchEvent(new Event('resize')); }
+  }, 500);
+  document.addEventListener('visibilitychange', function () { if (!document.hidden) unlockAudio(false); });   // v9f: __eadVis is maintained by the lifecycle log
+
+  let permissionStarted=0, grantedAt=0;
+  T.dismissed=false;
+  function clearMotionNotice() { const box=document.getElementById('eadmotionnotice'); if(box) box.remove(); }
+  function granted() { grantedAt=stamp(); T.tListen=grantedAt; T.timedOut=false; }
+  function permissionNotice(message) {
+    if(T.dismissed || !document.body) return;
+    let box=document.getElementById('eadmotionnotice');
+    if(!box) {
+      box=document.createElement('div'); box.id='eadmotionnotice';
+      box.style.cssText='position:fixed;top:15%;left:5%;right:5%;z-index:10001;background:#12203a;color:white;padding:12px;border:1px solid white;font:14px sans-serif';
+      box.innerHTML='<span></span><br><button>TAP TO RETRY</button><button>USE TOUCH / DISMISS</button>';
+      document.body.appendChild(box);
+      box.querySelector('button').addEventListener('click',function(e){e.stopPropagation(); T.dismissed=false;window.__eadAskTilt(true);});
+      box.querySelectorAll('button')[1].addEventListener('click',function(e){e.stopPropagation();T.dismissed=true;box.remove();T.state='dismissed';T.ok=false;});
+    }
+    box.querySelector('span').textContent=message;
+  }
+  function permissionState() {
+    const states=[T.orientationPermission,T.motionPermission];
+    if(T.dismissed) { T.state='dismissed'; return; }
+    if(states.some(s=>s==='asking')) T.state='asking';
+    else if(states.some(s=>s==='denied'||s.startsWith('error'))) T.state='denied';
+    else T.state=states.every(s=>s==='n-a')?'unsupported':'granted';
+    if(T.state==='granted') { const box=document.getElementById('eadmotionnotice'); if(box) box.remove(); }
+    if(T.gate==='waiting') gateEval();   // v9j: resolve the start-screen gate in the same task as the permission answer
+    if(T.state==='denied') permissionNotice('Tilt blocked: enable Motion & Orientation access in Settings > Safari (then reload). After a denial, close the tab and reopen the page to be asked again.');
+  }
+  T.orientationPermission='unasked'; T.motionPermission='unasked';
+  window.__eadAskTilt = function (force) {
+    if(force) T.dismissed=false;
+    if(T.dismissed) { T.state='dismissed'; return Promise.resolve(); }
+    listen();
+    if(!permissionStarted) permissionStarted=stamp();
+    // Both native calls happen synchronously, before any Promise callbacks run.
+    const pending=[];
+    [['DeviceOrientationEvent','orientationPermission'],['DeviceMotionEvent','motionPermission']].forEach(function(pair) {
+      const C=window[pair[0]], key=pair[1];
+      if(!force && (T[key]==='asking'||T[key].startsWith('granted'))) return;
+      if(!C) { T[key]='n-a'; return; }
+      if(typeof C.requestPermission!=='function') { T[key]='granted/not-required'; granted(); return; }
+      // v9j: a grant remembered from an earlier visit is re-confirmed silently (iOS answers at once, no dialog, no waiting state)
+      T[key]=rememberedGrant() ? 'granted (re-check)' : 'asking';
+      try {
+        const promise=C.requestPermission();
+        pending.push(Promise.resolve(promise).then(function(r){T[key]=r; if(r==='granted') { granted(); try { localStorage.setItem('ead_tilt_perm','granted:'+Date.now()); } catch(e) {} } else { T.dismissed=false; forgetGrant(); }},function(e){T[key]='error: '+e; T.dismissed=false; forgetGrant();}).then(permissionState));
+      } catch(e) { T[key]='error: '+e; }
+    });
+    permissionState();
+    return Promise.all(pending);
+  };
+  listen(); // Safe before permission, idempotent; never miss the first permitted event.
+  setInterval(function() {
+    if(T.hasAccel || T.hasOrient) { clearMotionNotice(); return; }
+    if(!permissionStarted || T.dismissed || T.gate==='waiting') return;   // v9j: the start-screen gate owns this period
+    if(T.state==='asking') {
+      if(stamp()-permissionStarted>2200) permissionNotice('Waiting for the Motion & Orientation prompt...');
+      return;
+    }
+    if(grantedAt && stamp()-grantedAt>2200 && T.state==='granted') {
+      const iosLike=['DeviceOrientationEvent','DeviceMotionEvent'].some(k=>window[k] && typeof window[k].requestPermission==='function');
+      permissionNotice(iosLike ? 'No motion events received - check Settings > Safari > Motion & Orientation Access' : 'No motion sensor data - using touch');
+    }
+  },250);
+
+  // ===== v9j TILT GATE, INVALID-READING GUARD and RESUME RE-SYNC
+  //  * gate: PLAY on the start screen waits (on the start screen, never over a running run) for the Motion & Orientation permission
+  //    (iOS: the promise asked inside the PLAY gesture) or, without a permission API (Chrome/Android, app wrapper), for the first VALID
+  //    sample; max 2.5 s, then TOUCH. ?tiltgate=0 turns it off (tests that cannot deliver sensor events).
+  //  * guard: all-zero / null / repeated readings are never applied and never feed detection; always on the closed small Chrome screen,
+  //    elsewhere only until the first valid orientation sample (the not-yet-converged fused sensor reports exactly 0/0/0).
+  //  * re-sync (closed small Chrome screen only): after any pause/resume the run waits for a fresh valid sample and keeps the channel,
+  //    sign and axis record it had before the pause; other screens keep the v9i resume behaviour (only the DEBUG counters below).
+  const GATE_SAMPLE_MS = 2500, GATE_PERM_MS = 20000, GATE_SILENT_MS = 600, RESYNC_MS = 1500, STALE_MS = 250, PILL_MS = 350;   // a gate that resolves within PILL_MS is invisible
+  T.gate = 'idle'; T.gateWhy = ''; T.gateMs = 0; T.gateT0 = 0; T.gateTimedOut = false; T.rejected = 0; T.firstValid = false; T.validT = 0; T.validMotionT = 0;
+  T.resumes = 0; T.resumeAngle = '-'; T.resumeWhy = '-'; T.pauseWhy = '-'; T.pausedJS = false; T.resync = null; T.resyncNote = '-'; T.autoNote = '';
+  T.good = { set: false };
+  const gateOff = /[?&]tiltgate=0/.test(location.search);
+  function rememberedGrant() { try { return /^granted/.test(localStorage.getItem('ead_tilt_perm') || ''); } catch (e) { return false; } }
+  function forgetGrant() { try { localStorage.removeItem('ead_tilt_perm'); } catch (e) {} }
+  function permissionApi() { return ['DeviceOrientationEvent', 'DeviceMotionEvent'].some(function (k) { return window[k] && typeof window[k].requestPermission === 'function'; }); }
+  // closed small screen class: viewport short side 340-420 and long side 600-760 CSS px, touch, Chrome on Android (not iOS). ?closedduo=1|0 forces it.
+  function closedDuo() {
+    const m = /[?&]closedduo=([01])/.exec(location.search); if (m) return m[1] === '1';
+    const vp = window.__eadVP;
+    return !!vp && window.__eadTiltAxis.closedSmall({ width: vp.lw, height: vp.lh, touch: vp.touch, ua: navigator.userAgent, ios: T.ios, fold: window.__eadDevice.fold });
+  }
+  window.__eadClosedDuo = closedDuo;
+  function strict() { return !T.firstValid || closedDuo(); }
+  function invalidOrient(e) {
+    const R = T.resync;
+    return window.__eadTiltAxis.invalidOrient(e, strict(), T.cOrientStamp, R && stamp() - R.t0 < STALE_MS ? R.pre : null);
+  }
+  function baseFor(g) {
+    if (g.source === 'default') return 0;
+    if (g.source === 'stored') { try { const a = JSON.parse(localStorage.getItem(g.key)); if (a && a.channel === g.channel && Number.isFinite(a.base)) return a.base; } catch (e) {} }
+    return g.base;
+  }
+  // first fresh valid sample after a resume: restore the last good channel/sign/axis record, re-derive the base from that record (never from the sample)
+  function resyncStep(now, fresh, sample) {
+    const R = T.resync;
+    if (now - R.t0 > RESYNC_MS) { T.resync = null; T.resyncNote = R.why + ': no fresh sample in ' + RESYNC_MS + ' ms (kept setup)'; return true; }
+    if (!fresh) return false;
+    const g = R.good, vp = window.__eadVP, portrait = !(vp && vp.lw > vp.lh);
+    let note = R.why + ': fresh sample after ' + Math.round(now - R.t0) + ' ms';
+    if (g.set && portrait && (T.cChannel !== g.channel || T.cSign !== g.sign || T.axisKey !== g.key)) {
+      note += ', kept ' + g.key + ' ' + g.channel + (g.sign > 0 ? '+' : '-') + ' (was ' + T.axisKey + ' ' + T.cChannel + (T.cSign > 0 ? '+' : '-') + ')';
+      T.axisKey = g.key; T.cChannel = g.channel; T.cSign = g.sign; T.axisSource = g.source; T.axisLocked = g.source === 'stored';
+    }
+    if (g.set) {
+      const v = window.__eadTiltAxis.value(sample, T.cChannel, T.ios), o = v === null ? 0 : window.__eadTiltAxis.map(v, g.base, g.sign);
+      if (Math.abs(o) < 0.9) T.cBase = baseFor(g); else { T.cBase = g.base; note += ', saturated: base kept'; }
+    }
+    T.resync = null; T.resyncNote = note; classicTime = 0; return true;
+  }
+  function tiltPause(why) { T.pauseWhy = why; T.pausedJS = true; }
+  function tiltResume(why) {
+    T.pausedJS = false; T.resumes++; T.resumeAngle = screenAngle(); T.resumeWhy = why;
+    if (!closedDuo() || !T.listening) return;                                         // other screens: v9i behaviour
+    const prev = T.resync;
+    T.resync = { t0: stamp(), why: why, good: prev ? prev.good : Object.assign({}, T.good), pre: prev ? prev.pre : [T.beta, T.gamma, T.alpha] };
+    T.out = 0; T.inited = false; classicTime = 0; restVals.length = 0; T.frameAngle = undefined; T.frameSince = 0; freshSince = 0;
+  }
+  window.__eadTiltPause = tiltPause; window.__eadTiltResume = tiltResume;
+  document.addEventListener('visibilitychange', function () { if (document.hidden) tiltPause('hidden'); else tiltResume('visible'); });
+  window.addEventListener('blur', function () { tiltPause('blur'); });
+  window.addEventListener('focus', function () { if (T.pausedJS) tiltResume('focus'); });
+  window.addEventListener('pagehide', function () { tiltPause('pagehide'); });
+  window.addEventListener('pageshow', function (e) { if (e.persisted || T.pausedJS) tiltResume('pageshow'); });
+  window.addEventListener('orientationchange', function () { tiltResume('orientation ' + screenAngle()); });
+  try { if (screen.orientation && screen.orientation.addEventListener) screen.orientation.addEventListener('change', function () { tiltResume('orientation ' + screenAngle()); }); } catch (e) {}
+  let lastW = 0, lastH = 0;
+  function pageSize() { const vv = window.visualViewport; return vv ? [vv.width, vv.height] : [document.documentElement.clientWidth, document.documentElement.clientHeight]; }
+  window.addEventListener('resize', function () {
+    const z = pageSize();
+    if (lastH && Math.abs(z[0] - lastW) < 2 && Math.abs(z[1] - lastH) >= 40) tiltResume('toolbar ' + Math.round(lastH) + '->' + Math.round(z[1]));
+    lastW = z[0]; lastH = z[1];
+  });
+  document.addEventListener('DOMContentLoaded', function () { const z = pageSize(); lastW = z[0]; lastH = z[1]; });
+
+  function tiltWanted(fromKey) {
+    if (gateOff) return 'tiltgate=0';
+    if (!(window.DeviceOrientationEvent || window.DeviceMotionEvent)) return 'no sensor API';
+    const coarse = matchMedia('(pointer:coarse)').matches || T.ios, vp = window.__eadVP;
+    if (!coarse && !(vp && vp.touch && !matchMedia('(pointer:fine)').matches)) return 'no coarse pointer';
+    if (fromKey && !coarse) return 'keyboard';
+    return '';
+  }
+  let gatePill = null, gateSilent = false;
+  function pill(on, text) {
+    if (on && !gatePill && document.body) { gatePill = document.createElement('div'); gatePill.id = 'eadgate';
+      gatePill.style.cssText = 'position:fixed;left:50%;top:calc(18% + env(safe-area-inset-top));transform:translateX(-50%);z-index:10000;font:600 14px/1.2 -apple-system,Helvetica,Arial,sans-serif;color:#fff;background:rgba(20,60,130,.88);border:1px solid #9cc4ff;border-radius:16px;padding:7px 14px;pointer-events:none;white-space:nowrap';
+      document.body.appendChild(gatePill); }
+    if (gatePill) { gatePill.style.display = on ? 'block' : 'none'; if (on) gatePill.textContent = text; }
+  }
+  function gateEnd(result, why) {
+    T.gate = result; T.gateWhy = why; T.gateMs = Math.round(stamp() - T.gateT0); pill(false);
+    if (result === 'ok') { T.out = 0; T.inited = false; classicTime = 0; freshSince = 0; }   // the run starts from a fresh filter
+    if (result === 'timeout') T.gateTimedOut = true;
+  }
+  function gateEval() {
+    if (T.gate !== 'waiting') return;
+    const n = stamp(), dt = n - T.gateT0;
+    if (T.dismissed || T.state === 'denied' || T.state === 'dismissed' || /^error/.test(T.state)) return gateEnd('denied', 'permission ' + T.state);
+    // 1. the permission promise (iOS Safari, and current Chrome which also exposes requestPermission), asked inside the PLAY gesture
+    if (T.gateApi && !T.gatePermT) {
+      const recheck = [T.orientationPermission, T.motionPermission].some(function (s) { return s === 'granted (re-check)'; });
+      if (!(T.state === 'granted' && !recheck) && !(gateSilent && dt >= GATE_SILENT_MS)) {
+        if (dt >= GATE_PERM_MS) return gateEnd('perm-timeout', 'permission not answered in ' + GATE_PERM_MS / 1000 + ' s');
+        if (!gateSilent && dt > PILL_MS) pill(true, 'enabling tilt\u2026 allow Motion & Orientation');
+        return;
+      }
+      T.gatePermT = n;
+    }
+    // 2. iOS: as before (Safari delivers samples at once after the grant). Elsewhere: the first VALID sample after the permission,
+    //    orientation (motion only when no orientation data stream exists at all), max GATE_SAMPLE_MS, then TOUCH.
+    if (T.ios) return gateEnd('ok', T.gateApi ? (T.state === 'granted' ? 'permission granted' : 'remembered grant') : 'no permission API');
+    const from = T.gateT0 - STALE_MS;
+    if (T.validT > from || (T.validMotionT > from && !T.nOrientData)) return gateEnd('ok', 'valid sample');
+    if (T.gateTimedOut || n - (T.gatePermT || T.gateT0) >= GATE_SAMPLE_MS) return gateEnd('timeout', 'no valid sensor sample in ' + (T.gateTimedOut ? 'an earlier gate' : GATE_SAMPLE_MS + ' ms'));
+    if (dt > PILL_MS) pill(true, 'enabling tilt\u2026');
+  }
+  window.__eadGateStart = function (fromKey) {
+    const why = tiltWanted(!!fromKey);
+    T.gateT0 = stamp(); T.gateMs = 0;
+    if (why) { T.gate = 'off'; T.gateWhy = why; return T.gate; }
+    T.gateApi = permissionApi(); T.gatePermT = 0; gateSilent = T.gateApi && rememberedGrant();
+    T.gate = 'waiting'; T.gateWhy = T.gateApi ? (gateSilent ? 'remembered grant: silent re-check' : 'permission') : 'first valid sample';
+    gateEval(); return T.gate;
+  };
+  setInterval(gateEval, 50);
+
+  // ---- audio unlock -----------------------------------------------------------------------------------------------------
+  let silent = null, jsCtx = null;
+  function silentWavUrl() {
+    // 2 s of 22.05 kHz mono 16-bit NEAR-silence (+-1 LSB noise: iOS does not treat bit-exact digital silence as "playing media")
+    const sr = 22050, n = sr * 2, buf = new Uint8Array(44 + n * 2), dv = new DataView(buf.buffer);
+    const w = function (o, s) { for (let i = 0; i < s.length; i++) buf[o + i] = s.charCodeAt(i); };
+    w(0, 'RIFF'); dv.setUint32(4, 36 + n * 2, true); w(8, 'WAVE'); w(12, 'fmt '); dv.setUint32(16, 16, true); dv.setUint16(20, 1, true);
+    dv.setUint16(22, 1, true); dv.setUint32(24, sr, true); dv.setUint32(28, sr * 2, true); dv.setUint16(32, 2, true); dv.setUint16(34, 16, true);
+    w(36, 'data'); dv.setUint32(40, n * 2, true);
+    for (let i = 0; i < n; i++) dv.setInt16(44 + i * 2, (i % 2 ? 1 : -1), true);
+    return URL.createObjectURL(new Blob([buf], { type: 'audio/wav' }));
+  }
+  function setSession() { try { if (navigator.audioSession) navigator.audioSession.type = 'playback'; } catch (e) {} }
+  setSession();     // allowed any time (Safari 16.4+): Web Audio then ignores the hardware ring/silent switch
+  function unlockAudio(isGesture, kind) {
+    if (isGesture) { A.gestures++; A.lastGesture = kind || '?'; }
+    setSession();
+    try {
+      if (!silent) { silent = document.createElement('audio'); silent.setAttribute('playsinline', ''); silent.setAttribute('webkit-playsinline', ''); silent.loop = true; silent.preload = 'auto'; silent.src = silentWavUrl(); silent.volume = 1; document.body && document.body.appendChild(silent); }
+      if (silent.paused && isGesture) { const p = silent.play(); if (p && p.then) p.then(function () { A.htmlResult = 'playing'; }).catch(function (e) { A.htmlResult = 'rejected: ' + (e && e.name); }); }
+    } catch (e) { A.htmlResult = 'error: ' + e; }
+    window.__eadCtxs.forEach(function (ctx) {
+      try {
+        if (ctx.state !== 'running') { A.resumeCalls++; const p = ctx.resume(); if (p && p.catch) p.catch(function () {}); }
+        if (isGesture && !ctx.__eadPrimed) {      // classic iOS unlock: start an empty one-sample buffer inside the gesture
+          ctx.__eadPrimed = true;
+          const b = ctx.createBuffer(1, 1, 22050), s = ctx.createBufferSource(); s.buffer = b; s.connect(ctx.destination); s.start(0); A.primeResult = 'ok';
+        }
+      } catch (e) { A.primeResult = 'error: ' + e; }
+    });
+    // our own context (independent of the engine): created INSIDE the gesture, resumed inside it
+    if (isGesture) {
+      try {
+        if (!jsCtx && window.__eadOrigAC) jsCtx = new window.__eadOrigAC();
+        if (jsCtx && jsCtx.state !== 'running') { const p = jsCtx.resume(); if (p && p.catch) p.catch(function () {}); }
+      } catch (e) { A.beepResult = 'ctx error: ' + e; }
+    }
+    A.unlocked = window.__eadCtxs.some(function (c) { return c.state === 'running'; });
+    if (window.__eadCtxs.length) A.ctxState = window.__eadCtxs[window.__eadCtxs.length - 1].state;
+  }
+  window.__eadUnlockAudio = unlockAudio;
+  // pure-JS beep (no engine involved): tells whether this device/browser/silent-switch state can play Web Audio at all
+  window.__eadBeep = function (loud) {
+    try {
+      if (!jsCtx && window.__eadOrigAC) jsCtx = new window.__eadOrigAC();
+      if (!jsCtx) { A.beepResult = 'no AudioContext'; return; }
+      setSession();
+      if (jsCtx.state !== 'running') jsCtx.resume();
+      const t0 = jsCtx.currentTime + 0.02, g = jsCtx.createGain(), vol = loud ? 0.35 : 0.2;
+      g.gain.setValueAtTime(0.0001, t0); g.gain.exponentialRampToValueAtTime(vol, t0 + 0.02); g.gain.exponentialRampToValueAtTime(0.0001, t0 + 0.42);
+      [660, 880].forEach(function (f, k) {
+        const o = jsCtx.createOscillator(); o.type = 'sine'; o.frequency.value = f; o.connect(g); o.start(t0 + k * 0.2); o.stop(t0 + k * 0.2 + 0.2);
+      });
+      g.connect(jsCtx.destination); A.beeps++; A.beepResult = 'played (ctx ' + jsCtx.state + ')';
+    } catch (e) { A.beepResult = 'error: ' + e; }
+  };
+
+  // v9c: FOLD asks for fullscreen on every user gesture while not fullscreen (throttled to one request per 2 s) to reclaim the browser
+  // toolbar height for the height-limited field. Touch devices only; iOS Safari has no element fullscreen on iPhone and is skipped.
+  let fsTried = -1e9, fsPending = null;
+  T.fsResult = '-';
+  function tryFullscreen() {
+    const el = document.documentElement, vp = window.__eadVP;
+    if (!(window.__eadDevice.fold || T.samsung) || T.ios || !(vp && vp.touch) || document.fullscreenElement || !(el.requestFullscreen || el.webkitRequestFullscreen)) return null;
+    const n = stamp(); if (n - fsTried < 2000) return null; fsTried = n; T.fsResult = 'requested';
+    try {
+      return Promise.resolve((el.requestFullscreen ? el.requestFullscreen({ navigationUI: 'hide' }) : el.webkitRequestFullscreen())).then(function () { T.fsResult = 'fullscreen'; }, function (e) { T.fsResult = 'rejected: ' + (e && e.name); });
+    } catch (e) { T.fsResult = 'error: ' + e; return null; }
+  }
+  document.addEventListener('webkitfullscreenchange', function () { if (window.__eadMeasure) window.__eadMeasure(); kick(); });
+  document.addEventListener('fullscreenchange', function () { if (window.__eadMeasure) window.__eadMeasure(); kick(); });
+  function tryLockPortrait() {
+    const fs = tryFullscreen(); if (fs) fsPending = fs;
+    if (T.lockTried) return; T.lockTried = true;
+    try {
+      if (screen.orientation && screen.orientation.lock) {
+        Promise.resolve(fsPending).then(function(){return screen.orientation.lock(window.__eadDevice.fold?'landscape':'portrait');}).then(function () { T.lockResult = 'locked'; }).catch(function (e) { T.lockResult = 'unsupported: ' + (e && e.name); });
+      } else T.lockResult = 'no API';
+    } catch (e) { T.lockResult = 'error'; }
+  }
+  let firstGesture = true;
+  function gesture(ev) {
+    unlockAudio(true, ev && ev.type);
+    tryLockPortrait();
+    if(window.__eadDevice.fold) { try { if(localStorage.getItem('ead_v9d_home_hint')!=='1') { localStorage.setItem('ead_v9d_home_hint','1'); toast('Tip: Add to Home Screen for full-screen play'); } } catch(e) {} }
+    if (firstGesture) { firstGesture = false; if (!A.muted) window.__eadBeep(false); }   // audible proof on the very first tap
+    const S=window.__eadState||{}, r=S.menu_buttons&&S.menu_buttons.play;
+    const pt=ev.changedTouches?ev.changedTouches[0]:ev;
+    const playKey=ev.type==='keydown' && ['Enter','Space',' '].includes(ev.code||ev.key);
+    const playTap=r && pt.clientX>=r.x && pt.clientX<=r.x+r.w && pt.clientY>=r.y && pt.clientY<=r.y+r.h;
+    const restoreTap=S.screen==='play' && S.resumed_from_fold && (rememberedGrant() || !permissionApi());
+    if (((S.screen==='menu' && (playKey||playTap)) || restoreTap) && window.__eadWantTilt && T.state !== 'granted') window.__eadAskTilt();
+  }
+  // Sensor permission is requested only from touchend/click/keydown; pointerup only unlocks audio.
+  document.addEventListener('touchend', gesture, true);
+  document.addEventListener('click', gesture, true);
+  window.addEventListener('keydown', gesture, true);
+  document.addEventListener('pointerup', function(ev) { unlockAudio(true,ev.type); }, true);
+  // Prevent iOS Safari pinch / double-tap zoom and rubber-band scrolling over the canvas.
+  document.addEventListener('gesturestart', function (e) { e.preventDefault(); });
+  document.addEventListener('touchmove', function (e) { e.preventDefault(); }, { passive: false });
+
+  // ---- DBG overlay -------------------------------------------------------------------------------------------------------
+  document.addEventListener('DOMContentLoaded', function () {
+    const panel = document.createElement('div'); panel.id = 'eaddbg';
+    const btns = document.createElement('div'); btns.id = 'eadbtns';
+    const bar = document.createElement('div'); bar.id = 'eadbar'; bar.innerHTML = '<i id="eadbarfill"></i><b></b><span id="eadbarnum"></span>'; document.body.appendChild(bar);
+    const hint = document.createElement('div'); hint.id = 'eadhint';
+    document.body.appendChild(panel); document.body.appendChild(btns); document.body.appendChild(hint);
+    // ===== DEBUG MODULE (v6): everything below that touches `visible` is debug-only.  It is OFF by default and switched by the OPTIONS screen's DEBUG
+    //   toggle (Godot calls window.__eadSetDebug) or ?debug=1.  To remove all debug code: delete this block + the DBG CSS + `st.*` publishing in main.gd.
+    let visible = window.__eadAdminEnabled && /[?&]debug=1/.test(location.search); try { if (!visible && window.__eadAdminEnabled) visible = localStorage.getItem('ead_debug') === '1'; } catch (e) {}
+    function mk(label, fn) {
+      const b = document.createElement('button'); b.textContent = label;
+      b.addEventListener('touchend', function (e) { e.stopPropagation(); e.preventDefault(); fn(); }, { passive: false });
+      b.addEventListener('click', function (e) { e.stopPropagation(); if (!('ontouchend' in window)) fn(); });
+      btns.appendChild(b); return b;
+    }
+    mk('BEEP (JS)', function () { window.__eadBeep(true); });
+    mk('SFX (Godot)', function () { window.__eadCmdBox.v = 'sfx'; });
+    mk('AUDIO MODE', function () { window.__eadCmdBox.v = 'mode'; });
+    mk('CALIBRATE', function () { window.__eadCal(); });
+    mk('FLIP DIR', function () { window.__eadFlip(); });
+    function apply() { panel.className = visible ? '' : 'off'; btns.style.display = visible ? 'flex' : 'none'; }
+    window.__eadSetDebug = function (on) { if (window.__eadAdminEnabled && /[?&]debug=1/.test(location.search)) on = true; visible = window.__eadAdminEnabled && !!on; try { localStorage.setItem('ead_debug', visible ? '1' : '0'); } catch (x) {} apply(); };
+    window.__eadDbgToggle = function () { window.__eadSetDebug(!visible); };
+    if (window.__eadPendingDebug !== undefined) window.__eadSetDebug(window.__eadPendingDebug);
+    apply();
+    if (T.migrated.length) toast('Old tilt calibration from an earlier version was reset');
+    // home-screen hint (iOS Safari tab only; dismissible; menu screen only)
+    let hintGone = false; try { hintGone = localStorage.getItem('ead_hint') === '1'; } catch (e) {}
+    const standalone = (navigator.standalone === true) || (window.matchMedia && window.matchMedia('(display-mode: standalone)').matches);
+    hint.innerHTML = '<button id="eadhx">OK</button><b>Best experience:</b> Share &#9654; <b>Add to Home Screen</b> and open the icon (full screen). The game keeps a fixed layout in every orientation.';
+    document.getElementById('eadhx').addEventListener('touchend', function (e) { e.stopPropagation(); e.preventDefault(); hintGone = true; try { localStorage.setItem('ead_hint', '1'); } catch (x) {} hint.style.display = 'none'; }, { passive: false });
+    document.getElementById('eadhx').addEventListener('click', function (e) { e.stopPropagation(); hintGone = true; hint.style.display = 'none'; });
+
+    let jsbLast = null, jsbRate = 0;
+    setInterval(function () {
+      const S = window.__eadState || {}, E = window.__eadErr;
+      hint.style.display = (!hintGone && !standalone && T.ios && S.screen === 'menu' && !window.__eadVP.deg) ? 'block' : 'none';
+      btns.style.display = (visible && S.screen !== 'options') ? 'flex' : 'none';   // never cover the OPTIONS buttons
+      if (!visible) { bar.style.display = 'none'; return; }
+      const c = document.getElementById('canvas'); const r = c ? c.getBoundingClientRect() : { width: 0, height: 0 };
+      const vv = window.visualViewport ? (Math.round(window.visualViewport.width) + 'x' + Math.round(window.visualViewport.height)) : 'n/a';
+      const tr = (window.__eadCtxs || []).length;
+      const L = [];
+      L.push('EAD ' + window.__EAD_VERSION + ' ' + window.__EAD_BUILD + ' scr ' + (S.screen || '?') + ' fps ' + (S.fps === undefined ? '?' : S.fps) + ' ' + (S.run || '') + ' setup ' + (S.setup === undefined ? '-' : S.setup));
+      // v9f stall diagnostics: Godot's DEBUG line, its last pause/resume events, page lifecycle events, bridge calls/s, backing store
+      const now = stamp(), J = window.__eadJsb, Dp = window.__eadDpr || {};
+      if (J) { const n = J.eval + J.get + J.set + J.call + J.iface; if (jsbLast) jsbRate = (n - jsbLast[1]) * 1000 / Math.max(1, now - jsbLast[0]); jsbLast = [now, n]; }
+      L.push('ERR(' + E.count + ') ' + E.last);   // v9f: near the top - the panel is capped at 40vh so the DBG buttons never cover the board
+      L.push('STALL ' + (S.dbg_line || '-'));
+      L.push('PAUSES ' + String(S.pause_log || '-').split('\n').join(' ; '));
+      L.push('LIFE ' + window.__eadLife.log.slice(-8).map(function (e) { return f((now - e[0]) / 1000, 1) + 's ' + e[1] + (e[2] > 1 ? ' x' + e[2] : ''); }).join(' ; '));
+      L.push('JSB ' + f(jsbRate, 0) + '/s  dpr used ' + f(Dp.used, 2) + ' real ' + f(Dp.real, 2) + ' (' + Dp.why + ')  canvas ' + (c ? c.width + 'x' + c.height : '-'));
+      L.push(T.health || 'TILT -');
+      L.push('TILT perm ' + T.state + ' src ' + T.src + ' ev m' + T.nMotion + '/o' + T.nOrient + ' ios ' + T.ios + ' sign ' + ((T.classic?T.cSign:T.sign) > 0 ? '+' : '-') + ' ctrl ' + (S.mode === 0 ? 'TILT' : (S.mode === undefined ? '?' : 'TOUCH' + (S.fallback ? '(auto)' : ''))));
+      L.push('V9J gate ' + T.gate + ' (' + (T.gateWhy || '-') + ', ' + T.gateMs + ' ms) closedduo ' + (window.__eadClosedDuo() ? 'yes' : 'no') + ' | raw g ' + f(T.gamma) + ' b ' + f(T.beta) + ' a ' + f(T.alpha) + ' accG ' + f(T.x, 2) + ' ' + f(T.y, 2) + ' ' + f(T.z, 2) +
+        ' | scr ' + screenAngle() + ' ' + ((screen.orientation && screen.orientation.type) || '-') + ' | ch ' + T.cChannel + ' ' + (T.cSign > 0 ? '+' : '-') + ' base ' + f(T.cBase) + ' ' + T.axisSource + ' key ' + T.axisKey + ' out ' + f(T.out, 2) +
+        ' | pause ' + T.pauseWhy + ' (game ' + (S.last_pause || '-') + ') resumes ' + T.resumes + ' (' + T.resumeWhy + ') angle@resume ' + T.resumeAngle + ' resync ' + (T.resync ? 'WAITING' : T.resyncNote) + ' | rejected ' + T.rejected + (T.autoNote ? ' | ' + T.autoNote : ''));
+      let stored='-'; try { stored=localStorage.getItem(axisKey()) || '-'; } catch(e) {}
+      const age=stamp()-(T.cChannel[0]==='a'?T.tAccel:T.tOrient);
+      L.push('V10B ua ' + T.uaFamily + (T.android ? ' android' : '') + ' | scr ' + screenAngle() + ' ' + ((screen.orientation && screen.orientation.type) || 'no-screen.orientation') + ' win.orientation ' + (typeof window.orientation === 'number' ? window.orientation : 'n/a') + ' | picture deg ' + window.__eadVP.deg + ' tiltAngle ' + tiltAngle() + ' | ch ' + T.cChannel + ' src ' + T.src + (T.staleFallback ? ' (STALE orient: accel fallback)' : '') + ' | sample age orient ' + f(stamp() - T.tOrient, 0) + ' ms, motion ' + f(stamp() - T.tAccel, 0) + ' ms | beta ' + f(T.beta) + ' gamma ' + f(T.gamma) + ' | frame ' + f(window.__eadFrame.ms, 1) + ' ms (worst ' + f(window.__eadFrame.worst, 0) + ') dpr ' + f(window.devicePixelRatio, 2) + ' (' + Dp.why + ') quality ' + (window.__eadDpr.low ? 'LOW' : 'normal') + ' | audio hint ' + (A.hint || 'engine') + ' meter ' + (A.noMeter ? 'off' : 'on') + ' | fs ' + T.fsResult + ' lock ' + T.lockResult);
+      L.push(window.__eadDevice.debug);
+      L.push('device '+(window.__eadDevice.fold?'fold':'phone')+' '+window.__eadDevice.source+' layout '+window.__eadVP.layout+' angle '+screenAngle()+' axis-source '+T.axisSource+' lock '+T.lockResult);
+      L.push('classic '+T.classic+' axis '+T.cChannel+' base '+f(T.cBase)+' out '+f(T.out,2)+' axisLocked '+T.axisLocked+' stored '+stored+' age-ms '+f(age,0)+' permission orientation '+f(T.orientationPermission)+' motion '+f(T.motionPermission)+' events/sec o'+f(T.orientEPS,0)+' m'+f(T.motionEPS,0)+' window.orientation '+f(T.windowOrientation,0)+' screen.orientation.angle '+f(T.screenOrientation,0)+(Math.abs(T.beta)>90?' upside-down: gamma reversed':''));
+      L.push('RAW gamma ' + f(T.gamma) + ' beta ' + f(T.beta) + ' alpha ' + f(T.alpha) + ' | accG x ' + f(T.x, 2) + ' y ' + f(T.y, 2) + ' z ' + f(T.z, 2) + ' | ang ' + T.angle + ' | gx ' + f(T.gx, 2) + ' pose ' + f(T.pose, 2) + ' lock ' + T.srcLocked + ' relisten ' + (T.nRelisten || 0));
+      L.push('roll ' + f(T.roll) + ' (raw ' + f(T.rollRaw) + ')  base ' + f(T.base) + '  rel ' + f(T.rel) + '  cal#' + T.calCount + ' ' + T.calNote);
+      L.push('TILT OUT ' + f(S.tilt_out, 2) + '  move ' + f(S.move, 2) + '  vx ' + f(S.vx, 0) + '  px ' + f(S.px, 0) + '  (orig ' + f(T.out, 2) + ')');
+      const VP = window.__eadVP, W = window.__eadWake;
+      L.push('VP page ' + VP.w + 'x' + VP.h + ' (raw ' + VP.ow + 'x' + VP.oh + ') vv ' + vv + ' scale ' + f(VP.vvScale, 2) + ' safe T' + VP.safeTop + ' B' + VP.safeBottom + ' | canvas css ' + Math.round(r.width) + 'x' + Math.round(r.height) + ' px ' + (c ? c.width + 'x' + c.height : '-') + ' | screen ' + screen.width + 'x' + screen.height);
+      L.push('WAKE want ' + W.want + ' active ' + W.active + ' via ' + W.method + ' | env ' + (S.env === undefined ? '-' : S.env) + ' death ' + (S.death || '-'));
+      L.push('win ' + window.innerWidth + 'x' + window.innerHeight + ' vv ' + vv + ' dpr ' + window.devicePixelRatio + ' cv ' + Math.round(r.width) + 'x' + Math.round(r.height) + ' game ' + f(S.vw, 0) + 'x' + f(S.vh, 0) + ' rot ' + VP.deg + ' (' + VP.why + ') layout ' + VP.lw + 'x' + VP.lh + ' lock ' + T.lockResult);
+      L.push('AUDIO ctx ' + (A.ctxStates.length ? A.ctxStates.join(',') : 'none') + ' js ' + A.jsState + ' sess ' + A.session + ' html ' + A.htmlAudio + '(' + A.htmlResult + ') gest ' + A.gestures + ' ' + A.lastGesture);
+      L.push('level pk ' + f(A.peak, 4) + ' rms ' + f(A.rms, 4) + (A.levelSeen ? ' heard' : ' SILENT') + ' mode ' + (S.pmode || '?') + ' sr ' + A.ctxSample + ' auto ' + A.autoSwitch + ' beep ' + A.beepResult);
+      L.push('music ' + (S.music_on ? 'ON' : 'OFF') + ' ' + (S.track || '-') + ' playing ' + (S.tracks_playing === undefined ? '?' : S.tracks_playing) + ' sfx ' + (S.sfx || '-') + ' #' + (S.sfx_n || 0));
+      L.push('bus ' + (S.bus || '?'));
+      panel.textContent = L.join('\n');
+      try { const o = Math.max(-1, Math.min(1, +S.tilt_out || 0)); const fl = document.getElementById('eadbarfill'); fl.style.left = o >= 0 ? '50%' : (50 + o * 50) + '%'; fl.style.width = (Math.abs(o) * 50) + '%'; fl.style.background = o >= 0 ? '#3ddc84' : '#ff9f43'; document.getElementById('eadbarnum').textContent = 'L ' + (o < 0 ? '' : ' ') + o.toFixed(2) + ' R   roll ' + f(T.roll) + ' rel ' + f(T.rel); bar.style.bottom = (panel.offsetHeight + btns.offsetHeight + 2) + 'px'; bar.style.display = 'block'; } catch (e) {}
+      // keep the buttons above the text block
+      btns.style.bottom = (panel.offsetHeight) + 'px';
+    }, 100);
+  });
+})();
+</script>
+
+		<link id="-gd-engine-icon" rel="icon" type="image/png" href="ead-v12e-20261029.icon.png" />
+<link rel="apple-touch-icon" href="icons/apple-touch-icon-180.png?v=v12e-20261029"/>
+
+	</head>
+	<body>
+		<canvas id="canvas">
+			Your browser does not support the canvas tag.
+		</canvas>
+
+		<noscript>
+			Your browser does not support JavaScript.
+		</noscript>
+
+		<div id="status">
+			<img id="status-splash" class="show-image--true fullsize--true use-filter--true" src="ead-v12e-20261029.png" alt="">
+			<progress id="status-progress"></progress>
+			<div id="status-notice"></div>
+		</div>
+
+		<script src="ead-v12e-20261029.js"></script>
+		<script>
+const GODOT_CONFIG = {"args":[],"canvasResizePolicy":2,"emscriptenPoolSize":8,"ensureCrossOriginIsolationHeaders":false,"executable":"ead-v12e-20261029","experimentalVK":false,"fileSizes":{"ead-v12e-20261029.pck":41819632,"ead-v12e-20261029.wasm":39514754},"focusCanvas":true,"gdextensionLibs":[],"godotPoolSize":4};
+const GODOT_THREADS_ENABLED = false;
+const engine = new Engine(GODOT_CONFIG);
+
+(function () {
+	const statusOverlay = document.getElementById('status');
+	const statusProgress = document.getElementById('status-progress');
+	const statusNotice = document.getElementById('status-notice');
+
+	let initializing = true;
+	let statusMode = '';
+
+	function setStatusMode(mode) {
+		if (statusMode === mode || !initializing) {
+			return;
+		}
+		if (mode === 'hidden') {
+			statusOverlay.remove();
+			initializing = false;
+			return;
+		}
+		statusOverlay.style.visibility = 'visible';
+		statusProgress.style.display = mode === 'progress' ? 'block' : 'none';
+		statusNotice.style.display = mode === 'notice' ? 'block' : 'none';
+		statusMode = mode;
+	}
+
+	function setStatusNotice(text) {
+		while (statusNotice.lastChild) {
+			statusNotice.removeChild(statusNotice.lastChild);
+		}
+		const lines = text.split('\n');
+		lines.forEach((line) => {
+			statusNotice.appendChild(document.createTextNode(line));
+			statusNotice.appendChild(document.createElement('br'));
+		});
+	}
+
+	function displayFailureNotice(err) {
+		console.error(err);
+		if (err instanceof Error) {
+			setStatusNotice(err.message);
+		} else if (typeof err === 'string') {
+			setStatusNotice(err);
+		} else {
+			setStatusNotice('An unknown error occurred.');
+		}
+		setStatusMode('notice');
+		initializing = false;
+	}
+
+	const missing = Engine.getMissingFeatures({
+		threads: GODOT_THREADS_ENABLED,
+	});
+
+	if (missing.length !== 0) {
+		if (GODOT_CONFIG['serviceWorker'] && GODOT_CONFIG['ensureCrossOriginIsolationHeaders'] && 'serviceWorker' in navigator) {
+			let serviceWorkerRegistrationPromise;
+			try {
+				serviceWorkerRegistrationPromise = navigator.serviceWorker.getRegistration();
+			} catch (err) {
+				serviceWorkerRegistrationPromise = Promise.reject(new Error('Service worker registration failed.'));
+			}
+			// There's a chance that installing the service worker would fix the issue
+			Promise.race([
+				serviceWorkerRegistrationPromise.then((registration) => {
+					if (registration != null) {
+						return Promise.reject(new Error('Service worker already exists.'));
+					}
+					return registration;
+				}).then(() => engine.installServiceWorker()),
+				// For some reason, `getRegistration()` can stall
+				new Promise((resolve) => {
+					setTimeout(() => resolve(), 2000);
+				}),
+			]).then(() => {
+				// Reload if there was no error.
+				window.location.reload();
+			}).catch((err) => {
+				console.error('Error while registering service worker:', err);
+			});
+		} else {
+			// Display the message as usual
+			const missingMsg = 'Error\nThe following features required to run Godot projects on the Web are missing:\n';
+			displayFailureNotice(missingMsg + missing.join('\n'));
+		}
+	} else {
+		setStatusMode('progress');
+		engine.startGame({
+			'onProgress': function (current, total) {
+				if (current > 0 && total > 0) {
+					statusProgress.value = current;
+					statusProgress.max = total;
+				} else {
+					statusProgress.removeAttribute('value');
+					statusProgress.removeAttribute('max');
+				}
+			},
+		}).then(() => {
+			setStatusMode('hidden');
+		}, displayFailureNotice);
+	}
+}());
+		</script>
+	</body>
+</html>
+
